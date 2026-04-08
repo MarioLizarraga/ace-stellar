@@ -1,0 +1,7 @@
+[
+  { "id": "big-bend", "name": "Big Bend National Park, TX", "lat": 29.25, "lng": -103.25, "bortle": 2 },
+  { "id": "white-sands", "name": "White Sands, NM", "lat": 32.78, "lng": -106.17, "bortle": 3 },
+  { "id": "sedona", "name": "Sedona, AZ", "lat": 34.87, "lng": -111.76, "bortle": 4 },
+  { "id": "cherry-springs", "name": "Cherry Springs State Park, PA", "lat": 41.66, "lng": -77.82, "bortle": 2 },
+  { "id": "mauna-kea", "name": "Mauna Kea, HI", "lat": 19.82, "lng": -155.47, "bortle": 1 }
+]
