@@ -22,11 +22,6 @@ export function GlobeView({ photos, onPinClick }: GlobeViewProps) {
   const globeRef = useRef<GlobeMethods | undefined>(undefined)
   const containerRef = useRef<HTMLDivElement>(null)
   const [dimensions, setDimensions] = useState({ width: 800, height: 600 })
-  // Store the latest callback and pins in refs so htmlElement closures aren't stale
-  const onPinClickRef = useRef(onPinClick)
-  const pinsRef = useRef<GlobePin[]>([])
-
-  onPinClickRef.current = onPinClick
 
   const pins: GlobePin[] = useMemo(() => {
     const locationMap = new Map<string, GlobePin>()
@@ -46,9 +41,7 @@ export function GlobeView({ photos, onPinClick }: GlobeViewProps) {
     for (const pin of locationMap.values()) {
       pin.size = Math.min(1.5, 0.4 + pin.photos.length * 0.15)
     }
-    const result = Array.from(locationMap.values())
-    pinsRef.current = result
-    return result
+    return Array.from(locationMap.values())
   }, [photos])
 
   useEffect(() => {
@@ -72,27 +65,16 @@ export function GlobeView({ photos, onPinClick }: GlobeViewProps) {
     }
   }, [pins])
 
-  function createPinElement(d: object): HTMLElement {
+  // Use htmlElementsData for visual pin markers (pointer-events: none)
+  // Use pointsData for the clickable hit area (invisible but clickable)
+  function createPinVisual(d: object): HTMLElement {
     const pin = d as GlobePin
-    const pinKey = `${pin.lat},${pin.lng}`
-
     const container = document.createElement('div')
-    container.style.cursor = 'pointer'
+    container.style.pointerEvents = 'none'
     container.style.transform = 'translate(-50%, -100%)'
-    container.style.position = 'relative'
-    container.dataset.pinKey = pinKey
-
-    container.addEventListener('click', (e) => {
-      e.stopPropagation()
-      // Find the pin from the ref to get the latest data
-      const currentPin = pinsRef.current.find((p) => `${p.lat},${p.lng}` === pinKey)
-      if (currentPin) {
-        onPinClickRef.current(currentPin)
-      }
-    })
 
     const size = 28 + Math.min(12, pin.photos.length * 3)
-    const uniqueId = `pinGrad-${pinKey.replace(/[.,\-]/g, '_')}`
+    const uniqueId = `pg-${pin.lat.toFixed(2)}-${pin.lng.toFixed(2)}`.replace(/[.\-]/g, '_')
     container.innerHTML = `
       <svg width="${size}" height="${Math.round(size * 1.4)}" viewBox="0 0 24 34" fill="none" xmlns="http://www.w3.org/2000/svg" style="filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5));">
         <path d="M12 0C5.373 0 0 5.373 0 12c0 9 12 22 12 22s12-13 12-22c0-6.627-5.373-12-12-12z" fill="#E53E3E"/>
@@ -108,25 +90,6 @@ export function GlobeView({ photos, onPinClick }: GlobeViewProps) {
         </defs>
       </svg>
     `
-
-    container.addEventListener('mouseenter', () => {
-      if (container.querySelector('.pin-tooltip')) return
-      const tooltip = document.createElement('div')
-      tooltip.className = 'pin-tooltip'
-      tooltip.style.cssText = `
-        position:absolute;bottom:100%;left:50%;transform:translateX(-50%);
-        background:#1a1a3e;border:1px solid #2a2a4a;border-radius:8px;
-        padding:6px 10px;font-size:11px;color:#e8e8ff;white-space:nowrap;
-        pointer-events:none;margin-bottom:4px;z-index:10;
-      `
-      tooltip.innerHTML = `<strong>${pin.name}</strong><br/><span style="color:#6b7280;">${pin.photos.length} photo${pin.photos.length !== 1 ? 's' : ''}</span>`
-      container.appendChild(tooltip)
-    })
-    container.addEventListener('mouseleave', () => {
-      const tooltip = container.querySelector('.pin-tooltip')
-      if (tooltip) tooltip.remove()
-    })
-
     return container
   }
 
@@ -142,11 +105,27 @@ export function GlobeView({ photos, onPinClick }: GlobeViewProps) {
         backgroundImageUrl={`${import.meta.env.BASE_URL}textures/night-sky.png`}
         atmosphereColor="#4a6fa5"
         atmosphereAltitude={0.15}
+        // Invisible clickable points
+        pointsData={pins}
+        pointLat={(d) => (d as GlobePin).lat}
+        pointLng={(d) => (d as GlobePin).lng}
+        pointAltitude={0.01}
+        pointRadius={(d) => (d as GlobePin).size}
+        pointColor={() => 'rgba(0,0,0,0)'}
+        pointLabel={(d) => {
+          const pin = d as GlobePin
+          return `<div style="background:#1a1a3e;border:1px solid #2a2a4a;border-radius:8px;padding:8px 12px;font-size:12px;color:#e8e8ff;">
+            <strong>${pin.name}</strong><br/>
+            <span style="color:#6b7280;">${pin.photos.length} photo${pin.photos.length !== 1 ? 's' : ''}</span>
+          </div>`
+        }}
+        onPointClick={(point) => onPinClick(point as GlobePin)}
+        // Visual pin markers (not clickable, just visuals)
         htmlElementsData={pins}
         htmlLat={(d) => (d as GlobePin).lat}
         htmlLng={(d) => (d as GlobePin).lng}
         htmlAltitude={0.02}
-        htmlElement={createPinElement}
+        htmlElement={createPinVisual}
         animateIn={true}
       />
     </div>
