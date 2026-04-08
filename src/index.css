@@ -35,3 +35,12 @@
 body {
   background-color: var(--color-bg-primary);
 }
+
+/* Override react-globe.gl default tooltip styling */
+.scene-tooltip,
+.float-tooltip-kap {
+  background: transparent !important;
+  padding: 0 !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+}

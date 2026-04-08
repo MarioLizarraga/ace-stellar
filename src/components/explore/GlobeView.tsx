@@ -39,7 +39,7 @@ export function GlobeView({ photos, onPinClick }: GlobeViewProps) {
       locationMap.get(key)!.photos.push(photo)
     }
     for (const pin of locationMap.values()) {
-      pin.size = Math.min(1.5, 0.4 + pin.photos.length * 0.15)
+      pin.size = Math.min(0.6, 0.2 + pin.photos.length * 0.06)
     }
     return Array.from(locationMap.values())
   }, [photos])
@@ -80,12 +80,12 @@ export function GlobeView({ photos, onPinClick }: GlobeViewProps) {
         pointsData={pins}
         pointLat={(d) => (d as GlobePin).lat}
         pointLng={(d) => (d as GlobePin).lng}
-        pointAltitude={0.06}
+        pointAltitude={0.12}
         pointRadius={(d) => (d as GlobePin).size}
         pointColor={() => '#E53E3E'}
         pointLabel={(d) => {
           const pin = d as GlobePin
-          return `<div style="background:#1a1a3e;border:1px solid #2a2a4a;border-radius:8px;padding:8px 12px;font-size:12px;color:#e8e8ff;pointer-events:none;">
+          return `<div style="background:#1a1a3e;border:1px solid #2a2a4a;border-radius:8px;padding:8px 12px;font-size:12px;color:#e8e8ff;">
             <strong>${pin.name}</strong><br/>
             <span style="color:#6b7280;">${pin.photos.length} photo${pin.photos.length !== 1 ? 's' : ''}</span>
           </div>`

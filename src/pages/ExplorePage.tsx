@@ -1,4 +1,5 @@
 import { useState, useCallback } from 'react'
+import { AnimatePresence } from 'framer-motion'
 import { PageTransition } from '../components/layout/PageTransition'
 import { GlobeView } from '../components/explore/GlobeView'
 import type { GlobePin } from '../components/explore/GlobeView'
@@ -30,15 +31,15 @@ export function ExplorePage() {
           onPinClick={handlePinClick}
         />
 
-        {selectedPin && (
-          <div className="absolute top-20 right-4 z-20">
+        <AnimatePresence>
+          {selectedPin && (
             <PinPopup
               locationName={selectedPin.name}
               photos={selectedPin.photos}
               onClose={() => setSelectedPin(null)}
             />
-          </div>
-        )}
+          )}
+        </AnimatePresence>
       </div>
     </PageTransition>
   )
