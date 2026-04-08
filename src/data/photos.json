@@ -5,10 +5,24 @@
     "src": "/photos/placeholder-1.jpg",
     "thumbnail": "/photos/thumbs/placeholder-1.jpg",
     "date": "2025-10-15",
-    "location": { "name": "Big Bend, TX", "lat": 29.25, "lng": -103.25 },
+    "location": {
+      "name": "Big Bend, TX",
+      "lat": 29.25,
+      "lng": -103.25
+    },
     "category": "moon",
-    "tags": ["full-moon", "landscape"],
-    "exif": { "camera": "Camera TBD", "lens": "Lens TBD", "focalLength": "200mm", "aperture": "f/2.8", "shutter": "1/250s", "iso": 400 },
+    "tags": [
+      "full-moon",
+      "landscape"
+    ],
+    "exif": {
+      "camera": "Camera TBD",
+      "lens": "Lens TBD",
+      "focalLength": "200mm",
+      "aperture": "f/2.8",
+      "shutter": "1/250s",
+      "iso": 400
+    },
     "featured": true
   },
   {
@@ -17,10 +31,24 @@
     "src": "/photos/placeholder-2.jpg",
     "thumbnail": "/photos/thumbs/placeholder-2.jpg",
     "date": "2025-08-20",
-    "location": { "name": "White Sands, NM", "lat": 32.78, "lng": -106.17 },
+    "location": {
+      "name": "White Sands, NM",
+      "lat": 32.78,
+      "lng": -106.17
+    },
     "category": "milky-way",
-    "tags": ["milky-way", "dark-sky"],
-    "exif": { "camera": "Camera TBD", "lens": "Lens TBD", "focalLength": "14mm", "aperture": "f/1.8", "shutter": "20s", "iso": 3200 },
+    "tags": [
+      "milky-way",
+      "dark-sky"
+    ],
+    "exif": {
+      "camera": "Camera TBD",
+      "lens": "Lens TBD",
+      "focalLength": "14mm",
+      "aperture": "f/1.8",
+      "shutter": "20s",
+      "iso": 3200
+    },
     "featured": true
   },
   {
@@ -29,10 +57,24 @@
     "src": "/photos/placeholder-3.jpg",
     "thumbnail": "/photos/thumbs/placeholder-3.jpg",
     "date": "2025-09-05",
-    "location": { "name": "Sedona, AZ", "lat": 34.87, "lng": -111.76 },
+    "location": {
+      "name": "Sedona, AZ",
+      "lat": 34.87,
+      "lng": -111.76
+    },
     "category": "moon",
-    "tags": ["crescent", "desert"],
-    "exif": { "camera": "Camera TBD", "lens": "Lens TBD", "focalLength": "300mm", "aperture": "f/4", "shutter": "1/125s", "iso": 800 },
+    "tags": [
+      "crescent",
+      "desert"
+    ],
+    "exif": {
+      "camera": "Camera TBD",
+      "lens": "Lens TBD",
+      "focalLength": "300mm",
+      "aperture": "f/4",
+      "shutter": "1/125s",
+      "iso": 800
+    },
     "featured": false
   },
   {
@@ -41,10 +83,24 @@
     "src": "/photos/placeholder-4.jpg",
     "thumbnail": "/photos/thumbs/placeholder-4.jpg",
     "date": "2025-12-01",
-    "location": { "name": "Cherry Springs, PA", "lat": 41.66, "lng": -77.82 },
+    "location": {
+      "name": "Cherry Springs, PA",
+      "lat": 41.66,
+      "lng": -77.82
+    },
     "category": "deep-sky",
-    "tags": ["nebula", "orion"],
-    "exif": { "camera": "Camera TBD", "lens": "Lens TBD", "focalLength": "800mm", "aperture": "f/10", "shutter": "120s", "iso": 1600 },
+    "tags": [
+      "nebula",
+      "orion"
+    ],
+    "exif": {
+      "camera": "Camera TBD",
+      "lens": "Lens TBD",
+      "focalLength": "800mm",
+      "aperture": "f/10",
+      "shutter": "120s",
+      "iso": 1600
+    },
     "featured": true
   },
   {
@@ -53,10 +109,24 @@
     "src": "/photos/placeholder-5.jpg",
     "thumbnail": "/photos/thumbs/placeholder-5.jpg",
     "date": "2025-07-10",
-    "location": { "name": "Banff, Canada", "lat": 51.18, "lng": -115.57 },
+    "location": {
+      "name": "Banff, Canada",
+      "lat": 51.18,
+      "lng": -115.57
+    },
     "category": "landscape",
-    "tags": ["star-trails", "lake"],
-    "exif": { "camera": "Camera TBD", "lens": "Lens TBD", "focalLength": "24mm", "aperture": "f/2.8", "shutter": "30s", "iso": 1600 },
+    "tags": [
+      "star-trails",
+      "lake"
+    ],
+    "exif": {
+      "camera": "Camera TBD",
+      "lens": "Lens TBD",
+      "focalLength": "24mm",
+      "aperture": "f/2.8",
+      "shutter": "30s",
+      "iso": 1600
+    },
     "featured": false
   },
   {
@@ -65,10 +135,24 @@
     "src": "/photos/placeholder-6.jpg",
     "thumbnail": "/photos/thumbs/placeholder-6.jpg",
     "date": "2025-11-18",
-    "location": { "name": "Mauna Kea, HI", "lat": 19.82, "lng": -155.47 },
+    "location": {
+      "name": "Mauna Kea, HI",
+      "lat": 19.82,
+      "lng": -155.47
+    },
     "category": "planetary",
-    "tags": ["saturn", "planet"],
-    "exif": { "camera": "Camera TBD", "lens": "Lens TBD", "focalLength": "2000mm", "aperture": "f/10", "shutter": "1/60s", "iso": 800 },
+    "tags": [
+      "saturn",
+      "planet"
+    ],
+    "exif": {
+      "camera": "Camera TBD",
+      "lens": "Lens TBD",
+      "focalLength": "2000mm",
+      "aperture": "f/10",
+      "shutter": "1/60s",
+      "iso": 800
+    },
     "featured": true
   },
   {
@@ -77,10 +161,24 @@
     "src": "/photos/placeholder-7.jpg",
     "thumbnail": "/photos/thumbs/placeholder-7.jpg",
     "date": "2025-03-15",
-    "location": { "name": "Tromsø, Norway", "lat": 69.65, "lng": 18.96 },
+    "location": {
+      "name": "TromsÃ¸, Norway",
+      "lat": 69.65,
+      "lng": 18.96
+    },
     "category": "landscape",
-    "tags": ["aurora", "northern-lights"],
-    "exif": { "camera": "Camera TBD", "lens": "Lens TBD", "focalLength": "14mm", "aperture": "f/2.8", "shutter": "8s", "iso": 3200 },
+    "tags": [
+      "aurora",
+      "northern-lights"
+    ],
+    "exif": {
+      "camera": "Camera TBD",
+      "lens": "Lens TBD",
+      "focalLength": "14mm",
+      "aperture": "f/2.8",
+      "shutter": "8s",
+      "iso": 3200
+    },
     "featured": true
   },
   {
@@ -89,10 +187,24 @@
     "src": "/photos/placeholder-8.jpg",
     "thumbnail": "/photos/thumbs/placeholder-8.jpg",
     "date": "2025-06-25",
-    "location": { "name": "Big Bend, TX", "lat": 29.25, "lng": -103.25 },
+    "location": {
+      "name": "Big Bend, TX",
+      "lat": 29.25,
+      "lng": -103.25
+    },
     "category": "milky-way",
-    "tags": ["milky-way", "panorama"],
-    "exif": { "camera": "Camera TBD", "lens": "Lens TBD", "focalLength": "14mm", "aperture": "f/1.8", "shutter": "25s", "iso": 6400 },
+    "tags": [
+      "milky-way",
+      "panorama"
+    ],
+    "exif": {
+      "camera": "Camera TBD",
+      "lens": "Lens TBD",
+      "focalLength": "14mm",
+      "aperture": "f/1.8",
+      "shutter": "25s",
+      "iso": 6400
+    },
     "featured": false
   },
   {
@@ -101,10 +213,24 @@
     "src": "/photos/placeholder-9.jpg",
     "thumbnail": "/photos/thumbs/placeholder-9.jpg",
     "date": "2025-09-28",
-    "location": { "name": "Sedona, AZ", "lat": 34.87, "lng": -111.76 },
+    "location": {
+      "name": "Sedona, AZ",
+      "lat": 34.87,
+      "lng": -111.76
+    },
     "category": "moon",
-    "tags": ["eclipse", "blood-moon"],
-    "exif": { "camera": "Camera TBD", "lens": "Lens TBD", "focalLength": "600mm", "aperture": "f/8", "shutter": "2s", "iso": 1600 },
+    "tags": [
+      "eclipse",
+      "blood-moon"
+    ],
+    "exif": {
+      "camera": "Camera TBD",
+      "lens": "Lens TBD",
+      "focalLength": "600mm",
+      "aperture": "f/8",
+      "shutter": "2s",
+      "iso": 1600
+    },
     "featured": true
   },
   {
@@ -113,10 +239,48 @@
     "src": "/photos/placeholder-10.jpg",
     "thumbnail": "/photos/thumbs/placeholder-10.jpg",
     "date": "2025-04-12",
-    "location": { "name": "Atacama Desert, Chile", "lat": -23.86, "lng": -69.13 },
+    "location": {
+      "name": "Atacama Desert, Chile",
+      "lat": -23.86,
+      "lng": -69.13
+    },
     "category": "deep-sky",
-    "tags": ["deep-sky", "southern-hemisphere"],
-    "exif": { "camera": "Camera TBD", "lens": "Lens TBD", "focalLength": "135mm", "aperture": "f/2", "shutter": "180s", "iso": 1600 },
+    "tags": [
+      "deep-sky",
+      "southern-hemisphere"
+    ],
+    "exif": {
+      "camera": "Camera TBD",
+      "lens": "Lens TBD",
+      "focalLength": "135mm",
+      "aperture": "f/2",
+      "shutter": "180s",
+      "iso": 1600
+    },
+    "featured": false
+  },
+  {
+    "id": "wer-mnpngx8m",
+    "title": "wer",
+    "description": "wer",
+    "src": "/ace-stellar/photos/wer-mnpngx8m.jpg",
+    "thumbnail": "/ace-stellar/photos/wer-mnpngx8m.jpg",
+    "date": "2026-04-08",
+    "location": {
+      "name": "Mexicali, Baja California, Mexico",
+      "lat": 32.62781,
+      "lng": -115.45446
+    },
+    "category": "moon",
+    "tags": [],
+    "exif": {
+      "camera": "Unknown",
+      "lens": "Unknown",
+      "focalLength": "Unknown",
+      "aperture": "Unknown",
+      "shutter": "Unknown",
+      "iso": 0
+    },
     "featured": false
   }
 ]
