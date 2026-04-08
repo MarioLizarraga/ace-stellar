@@ -162,7 +162,7 @@
     "thumbnail": "/photos/thumbs/placeholder-7.jpg",
     "date": "2025-03-15",
     "location": {
-      "name": "TromsÃÂ¸, Norway",
+      "name": "TromsÃÂÃÂ¸, Norway",
       "lat": 69.65,
       "lng": 18.96
     },
@@ -272,7 +272,9 @@
       "lng": -115.45446
     },
     "category": "moon",
-    "tags": [],
+    "tags": [
+      "Milky Way"
+    ],
     "exif": {
       "camera": "Unknown",
       "lens": "Unknown",
