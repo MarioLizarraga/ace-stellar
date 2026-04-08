@@ -14,12 +14,19 @@ export function WeatherDayCard({ day, isExpanded, onClick }: WeatherDayCardProps
 
   return (
     <div
-      className="bg-bg-primary/30 border border-border rounded-lg p-3 cursor-pointer hover:border-accent/30 transition-colors min-w-[100px]"
+      className={`rounded-lg p-3 cursor-pointer transition-colors min-w-[100px] shrink-0 ${
+        day.isHistorical
+          ? 'bg-bg-primary/20 border border-dashed border-border hover:border-accent/20'
+          : 'bg-bg-primary/30 border border-border hover:border-accent/30'
+      }`}
       onClick={onClick}
     >
       <div className="text-center mb-2">
         <p className="text-xs text-text-muted">{dayName}</p>
         <p className="text-xs text-text-primary font-medium">{dateStr}</p>
+        {day.isHistorical && (
+          <p className="text-[8px] text-text-muted italic">avg</p>
+        )}
       </div>
 
       <div className="flex justify-center mb-2">

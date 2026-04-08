@@ -10,7 +10,8 @@ interface WeatherStationProps {
 }
 
 export function WeatherStation({ location, onRemove }: WeatherStationProps) {
-  const { forecast, loading, error } = useWeather(location.lat, location.lng)
+  // 16 days forecast + 164 days historical = ~6 months total
+  const { forecast, loading, error } = useWeather(location.lat, location.lng, 164)
   const [expandedDay, setExpandedDay] = useState<number | null>(null)
 
   return (
@@ -40,16 +41,22 @@ export function WeatherStation({ location, onRemove }: WeatherStationProps) {
       )}
 
       {!loading && !error && (
-        <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-thin">
-          {forecast.map((day, i) => (
-            <WeatherDayCard
-              key={day.date}
-              day={day}
-              isExpanded={expandedDay === i}
-              onClick={() => setExpandedDay(expandedDay === i ? null : i)}
-            />
-          ))}
-        </div>
+        <>
+          <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-thin">
+            {forecast.map((day, i) => (
+              <WeatherDayCard
+                key={day.date}
+                day={day}
+                isExpanded={expandedDay === i}
+                onClick={() => setExpandedDay(expandedDay === i ? null : i)}
+              />
+            ))}
+          </div>
+          <div className="flex gap-3 mt-1 text-[9px] text-text-muted">
+            <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-accent/40 inline-block" /> Forecast (16 days)</span>
+            <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-text-muted/30 border border-dashed border-text-muted/40 inline-block" /> Historical avg (5yr)</span>
+          </div>
+        </>
       )}
     </div>
   )

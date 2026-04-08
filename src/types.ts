@@ -43,6 +43,7 @@ export interface DailyForecast {
   dewPoint: number
   visibility: number
   astroScore: number
+  isHistorical?: boolean
 }
 
 export interface MoonPhase {

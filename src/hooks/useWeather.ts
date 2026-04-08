@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import type { DailyForecast } from '../types'
-import { fetchWeatherForecast } from '../lib/weather-api'
+import { fetchWeatherForecast, fetchHistoricalAverages } from '../lib/weather-api'
 
 async function fetchWithRetry(lat: number, lng: number, retries = 3, delay = 1000): Promise<DailyForecast[]> {
   for (let attempt = 0; attempt < retries; attempt++) {
@@ -16,7 +16,7 @@ async function fetchWithRetry(lat: number, lng: number, retries = 3, delay = 100
 
 let fetchQueue = 0
 
-export function useWeather(lat: number, lng: number) {
+export function useWeather(lat: number, lng: number, historicalDays: number = 0) {
   const [forecast, setForecast] = useState<DailyForecast[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -26,23 +26,60 @@ export function useWeather(lat: number, lng: number) {
     setLoading(true)
     setError(null)
 
-    // Stagger requests so we don't hit the API all at once
     const staggerDelay = fetchQueue++ * 500
 
-    const timer = setTimeout(() => {
-      fetchWithRetry(lat, lng)
-        .then((data) => {
+    const timer = setTimeout(async () => {
+      try {
+        // Fetch the 16-day forecast
+        const forecastData = await fetchWithRetry(lat, lng)
+
+        if (cancelled) return
+
+        if (historicalDays > 0) {
+          // Fetch historical averages for days beyond forecast
+          const lastForecastDate = forecastData[forecastData.length - 1]?.date
+          if (lastForecastDate) {
+            const startDate = new Date(lastForecastDate + 'T00:00:00')
+            startDate.setDate(startDate.getDate() + 1)
+            const endDate = new Date(startDate)
+            endDate.setDate(endDate.getDate() + historicalDays - 1)
+
+            try {
+              const historicalData = await fetchHistoricalAverages(
+                lat,
+                lng,
+                startDate.toISOString().split('T')[0],
+                endDate.toISOString().split('T')[0],
+              )
+              if (!cancelled) {
+                setForecast([...forecastData, ...historicalData])
+                setLoading(false)
+              }
+            } catch {
+              // Historical failed, still show forecast
+              if (!cancelled) {
+                setForecast(forecastData)
+                setLoading(false)
+              }
+            }
+          } else {
+            if (!cancelled) {
+              setForecast(forecastData)
+              setLoading(false)
+            }
+          }
+        } else {
           if (!cancelled) {
-            setForecast(data)
+            setForecast(forecastData)
             setLoading(false)
           }
-        })
-        .catch((err) => {
-          if (!cancelled) {
-            setError(err.message)
-            setLoading(false)
-          }
-        })
+        }
+      } catch (err) {
+        if (!cancelled) {
+          setError(err instanceof Error ? err.message : 'Unknown error')
+          setLoading(false)
+        }
+      }
     }, staggerDelay)
 
     return () => {
@@ -50,7 +87,7 @@ export function useWeather(lat: number, lng: number) {
       clearTimeout(timer)
       fetchQueue = Math.max(0, fetchQueue - 1)
     }
-  }, [lat, lng])
+  }, [lat, lng, historicalDays])
 
   return { forecast, loading, error }
 }
