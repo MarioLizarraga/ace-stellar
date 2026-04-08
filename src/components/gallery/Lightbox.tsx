@@ -295,7 +295,7 @@ export function Lightbox({ photos, currentIndex, isOpen, onClose, onNavigate, on
                 <h2 className="text-lg font-semibold text-[#e8e8ff] mb-2">{photo.title}</h2>
 
                 {photo.description && (
-                  <p className="text-[#6b7280] text-sm mb-4 leading-relaxed">{photo.description}</p>
+                  <p className="text-[#6b7280] text-sm mb-4 leading-relaxed whitespace-pre-line">{photo.description}</p>
                 )}
 
                 <p className="text-[#6b7280] text-sm mb-1">{photo.location.name}</p>
