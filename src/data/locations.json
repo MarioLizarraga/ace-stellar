@@ -1,12 +1,5 @@
 [
   {
-    "id": "big-bend",
-    "name": "Big Bend National Park, TX",
-    "lat": 29.25,
-    "lng": -103.25,
-    "bortle": 2
-  },
-  {
     "id": "white-sands",
     "name": "White Sands, NM",
     "lat": 32.78,
