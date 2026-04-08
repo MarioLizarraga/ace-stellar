@@ -25,6 +25,13 @@ export function clearGitHubToken() {
   localStorage.removeItem('ace-stellar-gh-token')
 }
 
+// UTF-8 safe base64 encoding (btoa only handles Latin1)
+function utf8ToBase64(str: string): string {
+  return btoa(
+    new TextEncoder().encode(str).reduce((data, byte) => data + String.fromCharCode(byte), '')
+  )
+}
+
 interface GitHubFileResponse {
   content: string
   sha: string
@@ -52,7 +59,7 @@ async function updateFile(path: string, content: string, sha: string, message: s
     {
       method: 'PUT',
       headers: { Authorization: `Bearer ${token}`, Accept: 'application/vnd.github.v3+json' },
-      body: JSON.stringify({ message, content: btoa(content), sha }),
+      body: JSON.stringify({ message, content: utf8ToBase64(content), sha }),
     },
   )
   if (!response.ok) {
