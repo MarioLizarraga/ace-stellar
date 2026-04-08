@@ -6,9 +6,10 @@ import type { SavedLocation } from '../../types'
 
 interface WeatherStationProps {
   location: SavedLocation
+  onRemove?: () => void
 }
 
-export function WeatherStation({ location }: WeatherStationProps) {
+export function WeatherStation({ location, onRemove }: WeatherStationProps) {
   const { forecast, loading, error } = useWeather(location.lat, location.lng)
   const [expandedDay, setExpandedDay] = useState<number | null>(null)
 
@@ -16,7 +17,18 @@ export function WeatherStation({ location }: WeatherStationProps) {
     <div className="bg-bg-surface/50 border border-border rounded-xl p-6">
       <div className="flex items-center justify-between mb-2">
         <h3 className="text-sm font-semibold text-text-primary">{location.name}</h3>
-        <BortleIndicator bortle={location.bortle} />
+        <div className="flex items-center gap-3">
+          <BortleIndicator bortle={location.bortle} />
+          {onRemove && (
+            <button
+              onClick={onRemove}
+              className="text-text-muted hover:text-astro-red text-xs transition-colors"
+              title="Remove location"
+            >
+              ✕
+            </button>
+          )}
+        </div>
       </div>
 
       {loading && (

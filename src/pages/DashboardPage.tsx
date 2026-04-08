@@ -51,6 +51,18 @@ export function DashboardPage() {
     setShowAddForm(false)
   }
 
+  const defaultIds = new Set(defaultLocations.map((l) => l.id))
+
+  function handleRemoveLocation(id: string) {
+    const saved = JSON.parse(localStorage.getItem('ace-stellar-locations') || '[]') as SavedLocation[]
+    const filtered = saved.filter((l) => l.id !== id)
+    localStorage.setItem('ace-stellar-locations', JSON.stringify(filtered))
+    setLocations(locations.filter((l) => l.id !== id))
+    if (selectedLocationId === id) {
+      setSelectedLocationId(locations[0]?.id || '')
+    }
+  }
+
   return (
     <PageTransition>
       <div className="relative z-10 max-w-7xl mx-auto px-4 py-8">
@@ -150,7 +162,11 @@ export function DashboardPage() {
           )}
 
           {locations.map((loc) => (
-            <WeatherStation key={loc.id} location={loc} />
+            <WeatherStation
+              key={loc.id}
+              location={loc}
+              onRemove={!defaultIds.has(loc.id) ? () => handleRemoveLocation(loc.id) : undefined}
+            />
           ))}
         </div>
       </div>
