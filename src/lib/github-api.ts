@@ -120,6 +120,16 @@ export async function removePhotoFromRepo(id: string): Promise<void> {
   await updateFile(PHOTOS_PATH, newContent, file.sha, `feat: remove photo "${removed?.title || id}"`)
 }
 
+export async function updatePhotoInRepo(updatedPhoto: Photo): Promise<void> {
+  const file = await getFile(PHOTOS_PATH)
+  const photos: Photo[] = JSON.parse(file.content)
+  const idx = photos.findIndex((p) => p.id === updatedPhoto.id)
+  if (idx === -1) throw new Error('Photo not found')
+  photos[idx] = updatedPhoto
+  const newContent = JSON.stringify(photos, null, 2) + '\n'
+  await updateFile(PHOTOS_PATH, newContent, file.sha, `feat: update photo "${updatedPhoto.title}"`)
+}
+
 export async function uploadImageToRepo(
   fileName: string,
   base64Content: string,

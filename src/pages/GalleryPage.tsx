@@ -8,6 +8,8 @@ import { AddPhotoForm } from '../components/gallery/AddPhotoForm'
 import {
   isGitHubConfigured,
   addPhotoToRepo,
+  removePhotoFromRepo,
+  updatePhotoInRepo,
   uploadImageToRepo,
 } from '../lib/github-api'
 import photosData from '../data/photos.json'
@@ -106,6 +108,45 @@ export function GalleryPage() {
     }
   }
 
+  async function handleDeletePhoto(id: string) {
+    setPhotos(photos.filter((p) => p.id !== id))
+    setLightboxIndex(-1)
+
+    if (ghConfigured) {
+      setSaving(true)
+      setStatusMsg('Deleting from GitHub...')
+      try {
+        await removePhotoFromRepo(id)
+        setStatusMsg('Photo deleted. Site will redeploy in ~30s.')
+        setTimeout(() => setStatusMsg(null), 4000)
+      } catch (err) {
+        setStatusMsg(`Delete failed: ${err instanceof Error ? err.message : 'unknown error'}`)
+        setTimeout(() => setStatusMsg(null), 5000)
+      } finally {
+        setSaving(false)
+      }
+    }
+  }
+
+  async function handleUpdatePhoto(updated: Photo) {
+    setPhotos(photos.map((p) => p.id === updated.id ? updated : p))
+
+    if (ghConfigured) {
+      setSaving(true)
+      setStatusMsg('Saving changes to GitHub...')
+      try {
+        await updatePhotoInRepo(updated)
+        setStatusMsg('Photo updated. Site will redeploy in ~30s.')
+        setTimeout(() => setStatusMsg(null), 4000)
+      } catch (err) {
+        setStatusMsg(`Update failed: ${err instanceof Error ? err.message : 'unknown error'}`)
+        setTimeout(() => setStatusMsg(null), 5000)
+      } finally {
+        setSaving(false)
+      }
+    }
+  }
+
   return (
     <PageTransition>
       <div className="relative z-10 max-w-7xl mx-auto px-4 py-8">
@@ -174,6 +215,8 @@ export function GalleryPage() {
           isOpen={lightboxIndex >= 0}
           onClose={() => setLightboxIndex(-1)}
           onNavigate={setLightboxIndex}
+          onDelete={handleDeletePhoto}
+          onUpdate={handleUpdatePhoto}
         />
       </div>
     </PageTransition>
