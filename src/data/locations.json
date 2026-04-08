@@ -5,12 +5,5 @@
     "lat": 32.78,
     "lng": -106.17,
     "bortle": 3
-  },
-  {
-    "id": "mauna-kea",
-    "name": "Mauna Kea, HI",
-    "lat": 19.82,
-    "lng": -155.47,
-    "bortle": 1
   }
 ]
