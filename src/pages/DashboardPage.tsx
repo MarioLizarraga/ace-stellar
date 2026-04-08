@@ -4,6 +4,7 @@ import { LocationSelector } from '../components/dashboard/LocationSelector'
 import { MoonCalendar } from '../components/dashboard/MoonCalendar'
 import { MilkyWayPlanner } from '../components/dashboard/MilkyWayPlanner'
 import { WeatherStation } from '../components/dashboard/WeatherStation'
+import { CitySearch } from '../components/dashboard/CitySearch'
 import locationsData from '../data/locations.json'
 import type { SavedLocation } from '../types'
 
@@ -83,7 +84,29 @@ export function DashboardPage() {
           </div>
 
           {showAddForm && (
-            <div className="bg-bg-surface/50 border border-border rounded-xl p-4">
+            <div className="bg-bg-surface/50 border border-border rounded-xl p-4 space-y-3">
+              {/* City search */}
+              <div>
+                <label className="text-xs tracking-widest uppercase text-text-muted mb-1 block">Search by City</label>
+                <CitySearch
+                  onSelect={(city) => {
+                    const displayName = city.admin1
+                      ? `${city.name}, ${city.admin1}, ${city.country}`
+                      : `${city.name}, ${city.country}`
+                    setNewName(displayName)
+                    setNewLat(city.latitude.toString())
+                    setNewLng(city.longitude.toString())
+                  }}
+                />
+              </div>
+
+              <div className="flex items-center gap-3">
+                <div className="flex-1 border-t border-border" />
+                <span className="text-xs text-text-muted">or enter manually</span>
+                <div className="flex-1 border-t border-border" />
+              </div>
+
+              {/* Manual entry */}
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
                 <input
                   value={newName}
@@ -123,9 +146,6 @@ export function DashboardPage() {
                   Add
                 </button>
               </div>
-              <p className="text-xs text-text-muted mt-2">
-                Tip: Get coordinates from Google Maps — right-click any spot and copy the lat/lng.
-              </p>
             </div>
           )}
 
