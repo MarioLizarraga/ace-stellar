@@ -25,11 +25,17 @@ export function clearGitHubToken() {
   localStorage.removeItem('ace-stellar-gh-token')
 }
 
-// UTF-8 safe base64 encoding (btoa only handles Latin1)
+// UTF-8 safe base64 encoding/decoding (btoa/atob only handle Latin1)
 function utf8ToBase64(str: string): string {
   return btoa(
     new TextEncoder().encode(str).reduce((data, byte) => data + String.fromCharCode(byte), '')
   )
+}
+
+function base64ToUtf8(base64: string): string {
+  const binary = atob(base64)
+  const bytes = Uint8Array.from(binary, (c) => c.charCodeAt(0))
+  return new TextDecoder().decode(bytes)
 }
 
 interface GitHubFileResponse {
@@ -47,7 +53,7 @@ async function getFile(path: string): Promise<GitHubFileResponse> {
   )
   if (!response.ok) throw new Error(`GitHub API error: ${response.status}`)
   const data = await response.json()
-  return { content: atob(data.content), sha: data.sha }
+  return { content: base64ToUtf8(data.content), sha: data.sha }
 }
 
 async function updateFile(path: string, content: string, sha: string, message: string): Promise<void> {
