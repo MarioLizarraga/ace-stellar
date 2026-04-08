@@ -7,6 +7,7 @@ import { WeatherStation } from '../components/dashboard/WeatherStation'
 import { CitySearch } from '../components/dashboard/CitySearch'
 import {
   isGitHubConfigured,
+  hasBakedToken,
   setGitHubToken,
   clearGitHubToken,
   addLocationToRepo,
@@ -30,7 +31,7 @@ export function DashboardPage() {
   const [saving, setSaving] = useState(false)
   const [statusMsg, setStatusMsg] = useState<string | null>(null)
 
-  // GitHub token setup
+  const baked = hasBakedToken()
   const [ghConfigured, setGhConfigured] = useState(isGitHubConfigured)
   const [showTokenInput, setShowTokenInput] = useState(false)
   const [tokenInput, setTokenInput] = useState('')
@@ -55,13 +56,6 @@ export function DashboardPage() {
     }
   }
 
-  function handleDisconnect() {
-    clearGitHubToken()
-    setGhConfigured(false)
-    setStatusMsg('GitHub disconnected')
-    setTimeout(() => setStatusMsg(null), 3000)
-  }
-
   async function handleAddLocation() {
     const lat = parseFloat(newLat)
     const lng = parseFloat(newLng)
@@ -76,7 +70,6 @@ export function DashboardPage() {
       bortle: isNaN(bortle) ? 5 : Math.min(9, Math.max(1, bortle)),
     }
 
-    // Optimistic UI update
     setLocations([...locations, newLoc])
     setNewName('')
     setNewLat('')
@@ -89,10 +82,10 @@ export function DashboardPage() {
       setStatusMsg('Saving to GitHub...')
       try {
         await addLocationToRepo(newLoc)
-        setStatusMsg('Saved & deploying!')
-        setTimeout(() => setStatusMsg(null), 3000)
+        setStatusMsg('Saved! Site will redeploy in ~30s.')
+        setTimeout(() => setStatusMsg(null), 4000)
       } catch (err) {
-        setStatusMsg(`GitHub save failed: ${err instanceof Error ? err.message : 'unknown error'}`)
+        setStatusMsg(`Save failed: ${err instanceof Error ? err.message : 'unknown error'}`)
         setTimeout(() => setStatusMsg(null), 5000)
       } finally {
         setSaving(false)
@@ -113,12 +106,11 @@ export function DashboardPage() {
       setStatusMsg('Removing from GitHub...')
       try {
         await removeLocationFromRepo(id)
-        setStatusMsg(`Removed "${loc?.name}" & deploying!`)
-        setTimeout(() => setStatusMsg(null), 3000)
+        setStatusMsg(`Removed "${loc?.name}". Site will redeploy in ~30s.`)
+        setTimeout(() => setStatusMsg(null), 4000)
       } catch (err) {
-        // Revert on failure
         if (loc) setLocations((prev) => [...prev, loc])
-        setStatusMsg(`GitHub remove failed: ${err instanceof Error ? err.message : 'unknown error'}`)
+        setStatusMsg(`Remove failed: ${err instanceof Error ? err.message : 'unknown error'}`)
         setTimeout(() => setStatusMsg(null), 5000)
       } finally {
         setSaving(false)
@@ -139,23 +131,25 @@ export function DashboardPage() {
               selectedId={selectedLocationId}
               onChange={setSelectedLocationId}
             />
-            {/* GitHub connection indicator */}
-            {ghConfigured ? (
-              <button
-                onClick={handleDisconnect}
-                className="text-[10px] text-astro-green border border-astro-green/30 rounded-full px-2 py-0.5 hover:bg-astro-green/10 transition-colors"
-                title="Click to disconnect GitHub"
-              >
-                GH connected
-              </button>
-            ) : (
-              <button
-                onClick={() => setShowTokenInput(!showTokenInput)}
-                className="text-[10px] text-text-muted border border-border rounded-full px-2 py-0.5 hover:text-text-primary transition-colors"
-                title="Connect GitHub to persist changes"
-              >
-                Connect GitHub
-              </button>
+            {/* Only show GitHub connect UI when there's no baked-in token */}
+            {!baked && (
+              ghConfigured ? (
+                <button
+                  onClick={() => { clearGitHubToken(); setGhConfigured(false) }}
+                  className="text-[10px] text-astro-green border border-astro-green/30 rounded-full px-2 py-0.5 hover:bg-astro-green/10 transition-colors"
+                  title="Click to disconnect GitHub"
+                >
+                  GH connected
+                </button>
+              ) : (
+                <button
+                  onClick={() => setShowTokenInput(!showTokenInput)}
+                  className="text-[10px] text-text-muted border border-border rounded-full px-2 py-0.5 hover:text-text-primary transition-colors"
+                  title="Connect GitHub to persist changes"
+                >
+                  Connect GitHub
+                </button>
+              )
             )}
           </div>
         </div>
@@ -171,12 +165,12 @@ export function DashboardPage() {
           </div>
         )}
 
-        {/* Token input */}
-        {showTokenInput && !ghConfigured && (
+        {/* Token input — only for local dev when no baked token */}
+        {showTokenInput && !ghConfigured && !baked && (
           <div className="mb-6 bg-bg-surface/50 border border-border rounded-xl p-4 space-y-3">
             <p className="text-sm text-text-primary">Connect your GitHub to save locations permanently.</p>
             <p className="text-xs text-text-muted">
-              Create a <a href="https://github.com/settings/tokens/new?scopes=repo&description=Ace+Stellar" target="_blank" rel="noopener noreferrer" className="text-accent hover:underline">Personal Access Token</a> with <code className="text-text-primary">repo</code> scope. The token is stored only in your browser.
+              Create a <a href="https://github.com/settings/tokens/new?scopes=repo&description=Ace+Stellar" target="_blank" rel="noopener noreferrer" className="text-accent hover:underline">Personal Access Token</a> with <code className="text-text-primary">repo</code> scope.
             </p>
             <div className="flex gap-2">
               <input
@@ -217,7 +211,6 @@ export function DashboardPage() {
 
           {showAddForm && (
             <div className="bg-bg-surface/50 border border-border rounded-xl p-4 space-y-3">
-              {/* City search */}
               <div>
                 <label className="text-xs tracking-widest uppercase text-text-muted mb-1 block">Search by City</label>
                 <CitySearch
@@ -238,7 +231,6 @@ export function DashboardPage() {
                 <div className="flex-1 border-t border-border" />
               </div>
 
-              {/* Manual entry */}
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
                 <input
                   value={newName}

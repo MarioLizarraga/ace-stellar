@@ -1,12 +1,20 @@
 const REPO_OWNER = 'MarioLizarraga'
 const REPO_NAME = 'ace-stellar'
 
+// Token is baked in at build time via VITE_GH_TOKEN env var.
+// Falls back to localStorage for local development.
+const BUILT_IN_TOKEN = import.meta.env.VITE_GH_TOKEN as string | undefined
+
 function getToken(): string | null {
-  return localStorage.getItem('ace-stellar-gh-token')
+  return BUILT_IN_TOKEN || localStorage.getItem('ace-stellar-gh-token') || null
 }
 
 export function isGitHubConfigured(): boolean {
   return !!getToken()
+}
+
+export function hasBakedToken(): boolean {
+  return !!BUILT_IN_TOKEN
 }
 
 export function setGitHubToken(token: string) {
