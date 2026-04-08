@@ -14,12 +14,59 @@ interface GlobePin {
 interface GlobeViewProps {
   photos: Photo[]
   onPinClick: (pin: GlobePin) => void
-  onGlobeClick: (coords: { lat: number; lng: number }) => void
 }
 
 export type { GlobePin }
 
-export function GlobeView({ photos, onPinClick, onGlobeClick }: GlobeViewProps) {
+function createPinElement(pin: GlobePin, onClick: () => void): HTMLElement {
+  const container = document.createElement('div')
+  container.style.cursor = 'pointer'
+  container.style.transform = 'translate(-50%, -100%)'
+  container.style.position = 'relative'
+  container.onclick = (e) => { e.stopPropagation(); onClick() }
+
+  // Pin SVG — Google Maps style red pin
+  const size = 28 + Math.min(12, pin.photos.length * 3)
+  container.innerHTML = `
+    <svg width="${size}" height="${Math.round(size * 1.4)}" viewBox="0 0 24 34" fill="none" xmlns="http://www.w3.org/2000/svg" style="filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5));">
+      <path d="M12 0C5.373 0 0 5.373 0 12c0 9 12 22 12 22s12-13 12-22c0-6.627-5.373-12-12-12z" fill="#E53E3E"/>
+      <path d="M12 0C5.373 0 0 5.373 0 12c0 9 12 22 12 22s12-13 12-22c0-6.627-5.373-12-12-12z" fill="url(#pinGrad)"/>
+      <circle cx="12" cy="11" r="5" fill="#fff" opacity="0.9"/>
+      <text x="12" y="14" text-anchor="middle" font-size="7" font-weight="bold" fill="#E53E3E">${pin.photos.length}</text>
+      <defs>
+        <linearGradient id="pinGrad" x1="12" y1="0" x2="12" y2="34" gradientUnits="userSpaceOnUse">
+          <stop offset="0" stop-color="#FC8181"/>
+          <stop offset="0.5" stop-color="#E53E3E"/>
+          <stop offset="1" stop-color="#9B2C2C"/>
+        </linearGradient>
+      </defs>
+    </svg>
+  `
+
+  // Hover tooltip
+  container.onmouseenter = () => {
+    const existing = container.querySelector('.pin-tooltip')
+    if (existing) return
+    const tooltip = document.createElement('div')
+    tooltip.className = 'pin-tooltip'
+    tooltip.style.cssText = `
+      position:absolute;bottom:100%;left:50%;transform:translateX(-50%);
+      background:#1a1a3e;border:1px solid #2a2a4a;border-radius:8px;
+      padding:6px 10px;font-size:11px;color:#e8e8ff;white-space:nowrap;
+      pointer-events:none;margin-bottom:4px;z-index:10;
+    `
+    tooltip.innerHTML = `<strong>${pin.name}</strong><br/><span style="color:#6b7280;">${pin.photos.length} photo${pin.photos.length !== 1 ? 's' : ''}</span>`
+    container.appendChild(tooltip)
+  }
+  container.onmouseleave = () => {
+    const tooltip = container.querySelector('.pin-tooltip')
+    if (tooltip) tooltip.remove()
+  }
+
+  return container
+}
+
+export function GlobeView({ photos, onPinClick }: GlobeViewProps) {
   const globeRef = useRef<GlobeMethods | undefined>(undefined)
   const containerRef = useRef<HTMLDivElement>(null)
   const [dimensions, setDimensions] = useState({ width: 800, height: 600 })
@@ -45,6 +92,11 @@ export function GlobeView({ photos, onPinClick, onGlobeClick }: GlobeViewProps) 
     return Array.from(locationMap.values())
   }, [photos])
 
+  const handlePinClick = useCallback(
+    (pin: GlobePin) => onPinClick(pin),
+    [onPinClick],
+  )
+
   useEffect(() => {
     function updateDimensions() {
       if (containerRef.current) {
@@ -66,13 +118,6 @@ export function GlobeView({ photos, onPinClick, onGlobeClick }: GlobeViewProps) 
     }
   }, [pins])
 
-  const handleGlobeClick = useCallback(
-    (coords: { lat: number; lng: number }) => {
-      onGlobeClick(coords)
-    },
-    [onGlobeClick],
-  )
-
   return (
     <div ref={containerRef} className="w-full h-full">
       <Globe
@@ -85,21 +130,11 @@ export function GlobeView({ photos, onPinClick, onGlobeClick }: GlobeViewProps) 
         backgroundImageUrl={`${import.meta.env.BASE_URL}textures/night-sky.png`}
         atmosphereColor="#4a6fa5"
         atmosphereAltitude={0.15}
-        pointsData={pins}
-        pointLat={(d) => (d as GlobePin).lat}
-        pointLng={(d) => (d as GlobePin).lng}
-        pointAltitude={0.01}
-        pointRadius={(d) => (d as GlobePin).size}
-        pointColor={() => '#4a6fa5'}
-        pointLabel={(d) => {
-          const pin = d as GlobePin
-          return `<div style="background:#1a1a3e;border:1px solid #2a2a4a;border-radius:8px;padding:8px 12px;font-size:12px;color:#e8e8ff;">
-            <strong>${pin.name}</strong><br/>
-            <span style="color:#6b7280;">${pin.photos.length} photo${pin.photos.length !== 1 ? 's' : ''}</span>
-          </div>`
-        }}
-        onPointClick={(point) => onPinClick(point as GlobePin)}
-        onGlobeClick={({ lat, lng }) => handleGlobeClick({ lat, lng })}
+        htmlElementsData={pins}
+        htmlLat={(d) => (d as GlobePin).lat}
+        htmlLng={(d) => (d as GlobePin).lng}
+        htmlAltitude={0.02}
+        htmlElement={(d) => createPinElement(d as GlobePin, () => handlePinClick(d as GlobePin))}
         animateIn={true}
       />
     </div>

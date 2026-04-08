@@ -16,6 +16,7 @@ export interface PhotoExif {
 export interface Photo {
   id: string
   title: string
+  description?: string
   src: string
   thumbnail: string
   date: string

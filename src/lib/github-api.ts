@@ -89,6 +89,56 @@ export async function removeLocationFromRepo(id: string): Promise<void> {
   await updateFile(LOCATIONS_PATH, newContent, file.sha, `feat: remove location "${removed?.name || id}"`)
 }
 
+// --- Photos CRUD ---
+
+import type { Photo } from '../types'
+
+const PHOTOS_PATH = 'src/data/photos.json'
+
+export async function addPhotoToRepo(photo: Photo): Promise<void> {
+  const file = await getFile(PHOTOS_PATH)
+  const photos: Photo[] = JSON.parse(file.content)
+  photos.push(photo)
+  const newContent = JSON.stringify(photos, null, 2) + '\n'
+  await updateFile(PHOTOS_PATH, newContent, file.sha, `feat: add photo "${photo.title}"`)
+}
+
+export async function removePhotoFromRepo(id: string): Promise<void> {
+  const file = await getFile(PHOTOS_PATH)
+  const photos: Photo[] = JSON.parse(file.content)
+  const filtered = photos.filter((p) => p.id !== id)
+  if (filtered.length === photos.length) return
+  const removed = photos.find((p) => p.id === id)
+  const newContent = JSON.stringify(filtered, null, 2) + '\n'
+  await updateFile(PHOTOS_PATH, newContent, file.sha, `feat: remove photo "${removed?.title || id}"`)
+}
+
+export async function uploadImageToRepo(
+  fileName: string,
+  base64Content: string,
+): Promise<string> {
+  const token = getToken()
+  if (!token) throw new Error('GitHub token not configured')
+
+  const path = `public/photos/${fileName}`
+  const response = await fetch(
+    `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/${path}`,
+    {
+      method: 'PUT',
+      headers: { Authorization: `Bearer ${token}`, Accept: 'application/vnd.github.v3+json' },
+      body: JSON.stringify({
+        message: `feat: upload photo ${fileName}`,
+        content: base64Content,
+      }),
+    },
+  )
+  if (!response.ok) {
+    const err = await response.json()
+    throw new Error(err.message || `Upload failed: ${response.status}`)
+  }
+  return `${import.meta.env.BASE_URL}photos/${fileName}`
+}
+
 export async function verifyToken(): Promise<boolean> {
   const token = getToken()
   if (!token) return false
