@@ -14,13 +14,6 @@
     "bortle": 3
   },
   {
-    "id": "cherry-springs",
-    "name": "Cherry Springs State Park, PA",
-    "lat": 41.66,
-    "lng": -77.82,
-    "bortle": 2
-  },
-  {
     "id": "mauna-kea",
     "name": "Mauna Kea, HI",
     "lat": 19.82,
