@@ -5,18 +5,21 @@ import { MoonCalendar } from '../components/dashboard/MoonCalendar'
 import { MilkyWayPlanner } from '../components/dashboard/MilkyWayPlanner'
 import { WeatherStation } from '../components/dashboard/WeatherStation'
 import { CitySearch } from '../components/dashboard/CitySearch'
+import {
+  isGitHubConfigured,
+  setGitHubToken,
+  clearGitHubToken,
+  addLocationToRepo,
+  removeLocationFromRepo,
+  verifyToken,
+} from '../lib/github-api'
 import locationsData from '../data/locations.json'
 import type { SavedLocation } from '../types'
 
-const defaultLocations = locationsData as SavedLocation[]
-
-function getAllLocations(): SavedLocation[] {
-  const saved = JSON.parse(localStorage.getItem('ace-stellar-locations') || '[]') as SavedLocation[]
-  return [...defaultLocations, ...saved]
-}
+const allLocations = locationsData as SavedLocation[]
 
 export function DashboardPage() {
-  const [locations, setLocations] = useState(() => getAllLocations())
+  const [locations, setLocations] = useState(allLocations)
   const [selectedLocationId, setSelectedLocationId] = useState(locations[0]?.id || '')
   const selectedLocation = locations.find((l) => l.id === selectedLocationId) || locations[0]
   const [showAddForm, setShowAddForm] = useState(false)
@@ -24,8 +27,42 @@ export function DashboardPage() {
   const [newLat, setNewLat] = useState('')
   const [newLng, setNewLng] = useState('')
   const [newBortle, setNewBortle] = useState('5')
+  const [saving, setSaving] = useState(false)
+  const [statusMsg, setStatusMsg] = useState<string | null>(null)
 
-  function handleAddLocation() {
+  // GitHub token setup
+  const [ghConfigured, setGhConfigured] = useState(isGitHubConfigured)
+  const [showTokenInput, setShowTokenInput] = useState(false)
+  const [tokenInput, setTokenInput] = useState('')
+  const [verifying, setVerifying] = useState(false)
+
+  async function handleSaveToken() {
+    if (!tokenInput.trim()) return
+    setVerifying(true)
+    setGitHubToken(tokenInput.trim())
+    const valid = await verifyToken()
+    setVerifying(false)
+    if (valid) {
+      setGhConfigured(true)
+      setShowTokenInput(false)
+      setTokenInput('')
+      setStatusMsg('GitHub connected!')
+      setTimeout(() => setStatusMsg(null), 3000)
+    } else {
+      clearGitHubToken()
+      setStatusMsg('Invalid token — check permissions and try again')
+      setTimeout(() => setStatusMsg(null), 5000)
+    }
+  }
+
+  function handleDisconnect() {
+    clearGitHubToken()
+    setGhConfigured(false)
+    setStatusMsg('GitHub disconnected')
+    setTimeout(() => setStatusMsg(null), 3000)
+  }
+
+  async function handleAddLocation() {
     const lat = parseFloat(newLat)
     const lng = parseFloat(newLng)
     const bortle = parseInt(newBortle, 10)
@@ -39,27 +76,53 @@ export function DashboardPage() {
       bortle: isNaN(bortle) ? 5 : Math.min(9, Math.max(1, bortle)),
     }
 
-    const saved = JSON.parse(localStorage.getItem('ace-stellar-locations') || '[]') as SavedLocation[]
-    saved.push(newLoc)
-    localStorage.setItem('ace-stellar-locations', JSON.stringify(saved))
-
+    // Optimistic UI update
     setLocations([...locations, newLoc])
     setNewName('')
     setNewLat('')
     setNewLng('')
     setNewBortle('5')
     setShowAddForm(false)
+
+    if (ghConfigured) {
+      setSaving(true)
+      setStatusMsg('Saving to GitHub...')
+      try {
+        await addLocationToRepo(newLoc)
+        setStatusMsg('Saved & deploying!')
+        setTimeout(() => setStatusMsg(null), 3000)
+      } catch (err) {
+        setStatusMsg(`GitHub save failed: ${err instanceof Error ? err.message : 'unknown error'}`)
+        setTimeout(() => setStatusMsg(null), 5000)
+      } finally {
+        setSaving(false)
+      }
+    }
   }
 
-  const defaultIds = new Set(defaultLocations.map((l) => l.id))
-
-  function handleRemoveLocation(id: string) {
-    const saved = JSON.parse(localStorage.getItem('ace-stellar-locations') || '[]') as SavedLocation[]
-    const filtered = saved.filter((l) => l.id !== id)
-    localStorage.setItem('ace-stellar-locations', JSON.stringify(filtered))
+  async function handleRemoveLocation(id: string) {
+    const loc = locations.find((l) => l.id === id)
     setLocations(locations.filter((l) => l.id !== id))
     if (selectedLocationId === id) {
-      setSelectedLocationId(locations[0]?.id || '')
+      const remaining = locations.filter((l) => l.id !== id)
+      setSelectedLocationId(remaining[0]?.id || '')
+    }
+
+    if (ghConfigured) {
+      setSaving(true)
+      setStatusMsg('Removing from GitHub...')
+      try {
+        await removeLocationFromRepo(id)
+        setStatusMsg(`Removed "${loc?.name}" & deploying!`)
+        setTimeout(() => setStatusMsg(null), 3000)
+      } catch (err) {
+        // Revert on failure
+        if (loc) setLocations((prev) => [...prev, loc])
+        setStatusMsg(`GitHub remove failed: ${err instanceof Error ? err.message : 'unknown error'}`)
+        setTimeout(() => setStatusMsg(null), 5000)
+      } finally {
+        setSaving(false)
+      }
     }
   }
 
@@ -70,12 +133,69 @@ export function DashboardPage() {
           <h1 className="text-3xl font-extralight tracking-widest">
             DASH<span className="font-bold">BOARD</span>
           </h1>
-          <LocationSelector
-            locations={locations}
-            selectedId={selectedLocationId}
-            onChange={setSelectedLocationId}
-          />
+          <div className="flex items-center gap-4">
+            <LocationSelector
+              locations={locations}
+              selectedId={selectedLocationId}
+              onChange={setSelectedLocationId}
+            />
+            {/* GitHub connection indicator */}
+            {ghConfigured ? (
+              <button
+                onClick={handleDisconnect}
+                className="text-[10px] text-astro-green border border-astro-green/30 rounded-full px-2 py-0.5 hover:bg-astro-green/10 transition-colors"
+                title="Click to disconnect GitHub"
+              >
+                GH connected
+              </button>
+            ) : (
+              <button
+                onClick={() => setShowTokenInput(!showTokenInput)}
+                className="text-[10px] text-text-muted border border-border rounded-full px-2 py-0.5 hover:text-text-primary transition-colors"
+                title="Connect GitHub to persist changes"
+              >
+                Connect GitHub
+              </button>
+            )}
+          </div>
         </div>
+
+        {/* Status message */}
+        {statusMsg && (
+          <div className={`mb-4 text-xs px-3 py-2 rounded-lg border ${
+            statusMsg.includes('failed') || statusMsg.includes('Invalid')
+              ? 'bg-astro-red/10 border-astro-red/30 text-astro-red'
+              : 'bg-accent/10 border-accent/30 text-accent'
+          }`}>
+            {saving && '⏳ '}{statusMsg}
+          </div>
+        )}
+
+        {/* Token input */}
+        {showTokenInput && !ghConfigured && (
+          <div className="mb-6 bg-bg-surface/50 border border-border rounded-xl p-4 space-y-3">
+            <p className="text-sm text-text-primary">Connect your GitHub to save locations permanently.</p>
+            <p className="text-xs text-text-muted">
+              Create a <a href="https://github.com/settings/tokens/new?scopes=repo&description=Ace+Stellar" target="_blank" rel="noopener noreferrer" className="text-accent hover:underline">Personal Access Token</a> with <code className="text-text-primary">repo</code> scope. The token is stored only in your browser.
+            </p>
+            <div className="flex gap-2">
+              <input
+                value={tokenInput}
+                onChange={(e) => setTokenInput(e.target.value)}
+                placeholder="ghp_xxxxxxxxxxxx"
+                type="password"
+                className="flex-1 bg-bg-primary border border-border rounded-lg px-3 py-2 text-sm text-text-primary font-mono"
+              />
+              <button
+                onClick={handleSaveToken}
+                disabled={verifying}
+                className="bg-accent text-white rounded-lg px-4 py-2 text-sm font-medium hover:bg-accent/80 transition-colors disabled:opacity-50"
+              >
+                {verifying ? 'Verifying...' : 'Connect'}
+              </button>
+            </div>
+          </div>
+        )}
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
           <MoonCalendar lat={selectedLocation.lat} lng={selectedLocation.lng} />
@@ -153,11 +273,18 @@ export function DashboardPage() {
                 />
                 <button
                   onClick={handleAddLocation}
-                  className="bg-accent text-white rounded-lg px-4 py-2 text-sm font-medium hover:bg-accent/80 transition-colors"
+                  disabled={saving}
+                  className="bg-accent text-white rounded-lg px-4 py-2 text-sm font-medium hover:bg-accent/80 transition-colors disabled:opacity-50"
                 >
-                  Add
+                  {saving ? 'Saving...' : 'Add'}
                 </button>
               </div>
+
+              {!ghConfigured && (
+                <p className="text-xs text-astro-yellow">
+                  GitHub not connected — location will only appear until the page is redeployed.
+                </p>
+              )}
             </div>
           )}
 
@@ -165,7 +292,7 @@ export function DashboardPage() {
             <WeatherStation
               key={loc.id}
               location={loc}
-              onRemove={!defaultIds.has(loc.id) ? () => handleRemoveLocation(loc.id) : undefined}
+              onRemove={() => handleRemoveLocation(loc.id)}
             />
           ))}
         </div>
