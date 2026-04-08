@@ -48,6 +48,32 @@ function getMoonInterference(date: Date, _observer: Astronomy.Observer): 'none' 
   return 'high'
 }
 
+function computeNight(date: Date, observer: Astronomy.Observer): MilkyWayNight {
+  const gc = getGalacticCenterTransit(date, observer)
+  const moonInterference = getMoonInterference(date, observer)
+
+  const altScore = Math.min(40, Math.max(0, gc.maxAlt) * (40 / 60))
+  const moonScores = { none: 40, low: 30, medium: 15, high: 0 }
+  const moonScore = moonScores[moonInterference]
+  let windowHours = 0
+  if (gc.rise && gc.set) {
+    windowHours = (gc.set.getTime() - gc.rise.getTime()) / (1000 * 60 * 60)
+  }
+  const windowScore = Math.min(20, windowHours * (20 / 6))
+  const score = Math.round(altScore + moonScore + windowScore)
+
+  const formatTime = (d: Date | null) =>
+    d ? d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }) : null
+
+  return {
+    date: date.toISOString().split('T')[0],
+    score,
+    coreVisibleStart: formatTime(gc.rise),
+    coreVisibleEnd: formatTime(gc.set),
+    moonInterference,
+  }
+}
+
 export function getMilkyWayForecast(lat: number, lng: number, days: number = 30): MilkyWayNight[] {
   const observer = new Astronomy.Observer(lat, lng, 0)
   const nights: MilkyWayNight[] = []
@@ -57,33 +83,21 @@ export function getMilkyWayForecast(lat: number, lng: number, days: number = 30)
     const date = new Date(today)
     date.setDate(date.getDate() + i)
     date.setHours(0, 0, 0, 0)
-
-    const gc = getGalacticCenterTransit(date, observer)
-    const moonInterference = getMoonInterference(date, observer)
-
-    // Score: 0-100
-    const altScore = Math.min(40, Math.max(0, gc.maxAlt) * (40 / 60))
-    const moonScores = { none: 40, low: 30, medium: 15, high: 0 }
-    const moonScore = moonScores[moonInterference]
-    let windowHours = 0
-    if (gc.rise && gc.set) {
-      windowHours = (gc.set.getTime() - gc.rise.getTime()) / (1000 * 60 * 60)
-    }
-    const windowScore = Math.min(20, windowHours * (20 / 6))
-
-    const score = Math.round(altScore + moonScore + windowScore)
-
-    const formatTime = (d: Date | null) =>
-      d ? d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }) : null
-
-    nights.push({
-      date: date.toISOString().split('T')[0],
-      score,
-      coreVisibleStart: formatTime(gc.rise),
-      coreVisibleEnd: formatTime(gc.set),
-      moonInterference,
-    })
+    nights.push(computeNight(date, observer))
   }
 
   return nights.sort((a, b) => b.score - a.score)
+}
+
+export function getMilkyWayForMonth(lat: number, lng: number, year: number, month: number): MilkyWayNight[] {
+  const observer = new Astronomy.Observer(lat, lng, 0)
+  const daysInMonth = new Date(year, month + 1, 0).getDate()
+  const nights: MilkyWayNight[] = []
+
+  for (let day = 1; day <= daysInMonth; day++) {
+    const date = new Date(year, month, day, 0, 0, 0)
+    nights.push(computeNight(date, observer))
+  }
+
+  return nights
 }
