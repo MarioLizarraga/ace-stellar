@@ -13,3 +13,25 @@
 
   --font-family-sans: 'Inter', ui-sans-serif, system-ui, sans-serif;
 }
+
+/* Custom scrollbar */
+.scrollbar-thin::-webkit-scrollbar {
+  height: 4px;
+  width: 4px;
+}
+.scrollbar-thin::-webkit-scrollbar-track {
+  background: transparent;
+}
+.scrollbar-thin::-webkit-scrollbar-thumb {
+  background: var(--color-border);
+  border-radius: 2px;
+}
+
+/* Selection color */
+::selection {
+  background: rgba(74, 111, 165, 0.3);
+}
+
+body {
+  background-color: var(--color-bg-primary);
+}
