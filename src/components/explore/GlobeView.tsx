@@ -62,7 +62,7 @@ function createPinMesh(pin: GlobePin): THREE.Object3D {
   group.add(dot)
 
   // Scale the whole thing down to globe proportions
-  group.scale.setScalar(0.35)
+  group.scale.setScalar(0.6)
 
   return group
 }
