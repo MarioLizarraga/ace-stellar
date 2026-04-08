@@ -80,9 +80,9 @@ export function GlobeView({ photos, onPinClick, onGlobeClick }: GlobeViewProps) 
         width={dimensions.width}
         height={dimensions.height}
         backgroundColor="rgba(0,0,0,0)"
-        globeImageUrl="/textures/earth-blue-marble.jpg"
-        bumpImageUrl="/textures/earth-topology.png"
-        backgroundImageUrl="/textures/night-sky.png"
+        globeImageUrl={`${import.meta.env.BASE_URL}textures/earth-blue-marble.jpg`}
+        bumpImageUrl={`${import.meta.env.BASE_URL}textures/earth-topology.png`}
+        backgroundImageUrl={`${import.meta.env.BASE_URL}textures/night-sky.png`}
         atmosphereColor="#4a6fa5"
         atmosphereAltitude={0.15}
         pointsData={pins}
