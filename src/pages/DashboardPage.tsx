@@ -3,6 +3,7 @@ import { PageTransition } from '../components/layout/PageTransition'
 import { LocationSelector } from '../components/dashboard/LocationSelector'
 import { MoonCalendar } from '../components/dashboard/MoonCalendar'
 import { MilkyWayPlanner } from '../components/dashboard/MilkyWayPlanner'
+import { WeatherStation } from '../components/dashboard/WeatherStation'
 import locationsData from '../data/locations.json'
 import type { SavedLocation } from '../types'
 
@@ -26,9 +27,18 @@ export function DashboardPage() {
           />
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
           <MoonCalendar lat={selectedLocation.lat} lng={selectedLocation.lng} />
           <MilkyWayPlanner lat={selectedLocation.lat} lng={selectedLocation.lng} />
+        </div>
+
+        <div className="space-y-4">
+          <h2 className="text-lg font-light tracking-widest">
+            WEATHER <span className="font-bold">STATION</span>
+          </h2>
+          {locations.map((loc) => (
+            <WeatherStation key={loc.id} location={loc} />
+          ))}
         </div>
       </div>
     </PageTransition>
