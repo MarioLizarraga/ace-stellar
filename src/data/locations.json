@@ -5,5 +5,12 @@
     "lat": 32.78,
     "lng": -106.17,
     "bortle": 3
+  },
+  {
+    "id": "redmond,-washington,-united-states",
+    "name": "Redmond, Washington, United States",
+    "lat": 47.67399,
+    "lng": -122.12151,
+    "bortle": 5
   }
 ]
