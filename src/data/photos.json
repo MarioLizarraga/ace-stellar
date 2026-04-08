@@ -162,7 +162,7 @@
     "thumbnail": "/photos/thumbs/placeholder-7.jpg",
     "date": "2025-03-15",
     "location": {
-      "name": "TromsÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂ¸, Norway",
+      "name": "TromsÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂÃÂ¸, Norway",
       "lat": 69.65,
       "lng": 18.96
     },
@@ -265,21 +265,23 @@
     "description": "I can only be myself when I'm with you. 🌌⭐\n\nI took this picture on 20th June 2020 with my girlfriend and took me a while to upload it, but finally here it is. 📆🔚\n⠀⠀⠀⠀⠀\nThis was the best picture of the first set of photos I took to the milky way that day. 🖼️\n\nI was amazed and excited when I saw them on the screen of my camera at that moment cause I didn't believe I could do it. 🙌🏻\n\nI guess everyone has the potential to learn and do what they are really passionate about. 💪🏻👨🏻‍🚀\n\nCanon EOS Rebel T7i, 18 mm, ISO 12800, f/4 📷",
     "src": "/ace-stellar/photos/wer-mnpngx8m.jpg",
     "thumbnail": "/ace-stellar/photos/wer-mnpngx8m.jpg",
-    "date": "2020-06-20",
+    "date": "2026-04-08",
     "location": {
       "name": "Mexicali, Baja California, Mexico",
       "lat": 32.62781,
       "lng": -115.45446
     },
     "category": "milky-way",
-    "tags": [],
+    "tags": [
+      "milky way"
+    ],
     "exif": {
-      "camera": "Unknown",
+      "camera": "Canon EOS Rebel T7i",
       "lens": "Unknown",
-      "focalLength": "Unknown",
-      "aperture": "Unknown",
+      "focalLength": "18mm",
+      "aperture": "f/4",
       "shutter": "Unknown",
-      "iso": 0
+      "iso": 12800
     },
     "featured": false
   }
