@@ -1,8 +1,7 @@
 import { useState } from 'react'
 import { PageTransition } from '../components/layout/PageTransition'
 import { LocationSelector } from '../components/dashboard/LocationSelector'
-import { MoonCalendar } from '../components/dashboard/MoonCalendar'
-import { MilkyWayPlanner } from '../components/dashboard/MilkyWayPlanner'
+import { AstroCalendar } from '../components/dashboard/AstroCalendar'
 import { WeatherStation } from '../components/dashboard/WeatherStation'
 import { CitySearch } from '../components/dashboard/CitySearch'
 import {
@@ -191,9 +190,8 @@ export function DashboardPage() {
           </div>
         )}
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-          <MoonCalendar lat={selectedLocation.lat} lng={selectedLocation.lng} />
-          <MilkyWayPlanner lat={selectedLocation.lat} lng={selectedLocation.lng} />
+        <div className="mb-6">
+          <AstroCalendar lat={selectedLocation.lat} lng={selectedLocation.lng} />
         </div>
 
         <div className="space-y-4">

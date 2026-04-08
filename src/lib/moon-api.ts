@@ -2,16 +2,17 @@ import * as Astronomy from 'astronomy-engine'
 import type { MoonPhase } from '../types'
 
 function getMoonPhaseName(illumination: Astronomy.IlluminationInfo): string {
-  const phase = illumination.phase_angle
-  if (phase < 10) return 'New Moon'
-  if (phase < 80) return 'Waxing Crescent'
-  if (phase < 100) return 'First Quarter'
-  if (phase < 170) return 'Waxing Gibbous'
-  if (phase < 190) return 'Full Moon'
-  if (phase < 260) return 'Waning Gibbous'
-  if (phase < 280) return 'Last Quarter'
-  if (phase < 350) return 'Waning Crescent'
-  return 'New Moon'
+  // phase_angle: 0° = full moon (fully illuminated), 180° = new moon (no illumination)
+  const angle = illumination.phase_angle
+  if (angle < 10 || angle >= 350) return 'Full Moon'
+  if (angle < 80) return 'Waning Gibbous'
+  if (angle < 100) return 'Last Quarter'
+  if (angle < 170) return 'Waning Crescent'
+  if (angle < 190) return 'New Moon'
+  if (angle < 260) return 'Waxing Crescent'
+  if (angle < 280) return 'First Quarter'
+  if (angle < 350) return 'Waxing Gibbous'
+  return 'Full Moon'
 }
 
 function getMoonPhaseEmoji(phaseName: string): string {
@@ -27,6 +28,8 @@ function getMoonPhaseEmoji(phaseName: string): string {
   }
   return emojis[phaseName] || '🌑'
 }
+
+export { getMoonPhaseEmoji }
 
 export function getMoonDataForMonth(
   year: number,
