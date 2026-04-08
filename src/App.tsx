@@ -1,5 +1,7 @@
 import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom'
 import { AnimatePresence } from 'framer-motion'
+import { Navbar } from './components/layout/Navbar'
+import { StarBackground } from './components/layout/StarBackground'
 import { DashboardPage } from './pages/DashboardPage'
 import { GalleryPage } from './pages/GalleryPage'
 import { ExplorePage } from './pages/ExplorePage'
@@ -21,7 +23,9 @@ export default function App() {
   return (
     <BrowserRouter>
       <div className="min-h-screen bg-bg-primary text-text-primary font-sans">
-        <main>
+        <StarBackground />
+        <Navbar />
+        <main className="pt-16">
           <AnimatedRoutes />
         </main>
       </div>
