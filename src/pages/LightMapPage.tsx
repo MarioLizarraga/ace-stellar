@@ -265,7 +265,7 @@ export function LightMapPage() {
                             <p style={{ fontWeight: 600, fontSize: '14px', margin: 0 }}>Bortle {lightInfo.bortle}</p>
                             <p style={{ fontSize: '12px', color: '#666', margin: 0 }}>{BORTLE_INFO[lightInfo.bortle]?.label}</p>
                           </div>
-                          {lightInfo.source === 'wms' && (
+                          {lightInfo.source === 'satellite' && (
                             <span style={{ fontSize: '9px', color: '#4a6fa5', marginLeft: 'auto', background: '#e8f0fe', padding: '1px 6px', borderRadius: '8px' }}>live</span>
                           )}
                         </div>
