@@ -122,7 +122,7 @@ export function DashboardPage() {
       <div className="relative z-10 max-w-7xl mx-auto px-4 py-8">
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-8 gap-4">
           <h1 className="text-3xl font-extralight tracking-widest">
-            DASH<span className="font-bold">BOARD</span>
+            PL<span className="font-bold">AN</span>
           </h1>
           <div className="flex items-center gap-4">
             <LocationSelector

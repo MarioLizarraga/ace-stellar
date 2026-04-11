@@ -49,7 +49,7 @@ export function HomePage() {
 
             <motion.div variants={fadeUp} className="flex flex-wrap justify-center gap-4">
               <Link
-                to="/dashboard"
+                to="/plan"
                 className="bg-accent text-white px-6 py-3 rounded-lg text-sm tracking-wider uppercase font-medium hover:bg-accent/80 transition-colors"
               >
                 Plan a Shoot

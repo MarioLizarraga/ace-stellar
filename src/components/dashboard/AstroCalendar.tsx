@@ -13,6 +13,14 @@ interface DayData {
   mw: MilkyWayNight
 }
 
+interface PinnedDate {
+  date: string
+  label: string
+  mwScore: number
+  moonPhase: string
+  moonIllum: number
+}
+
 function mwScoreColor(score: number): string {
   if (score >= 70) return 'text-astro-green'
   if (score >= 40) return 'text-astro-yellow'
@@ -41,6 +49,16 @@ const moonInterferenceColor: Record<string, string> = {
 
 const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
 
+function loadPinnedDates(): PinnedDate[] {
+  try {
+    return JSON.parse(localStorage.getItem('ace-stellar-pinned-dates') || '[]')
+  } catch { return [] }
+}
+
+function savePinnedDates(pins: PinnedDate[]) {
+  localStorage.setItem('ace-stellar-pinned-dates', JSON.stringify(pins))
+}
+
 export function AstroCalendar({ lat, lng }: AstroCalendarProps) {
   const now = new Date()
   const [year, setYear] = useState(now.getFullYear())
@@ -50,10 +68,13 @@ export function AstroCalendar({ lat, lng }: AstroCalendarProps) {
   const [selectedIdx, setSelectedIdx] = useState<number | null>(null)
   const [nextFull, setNextFull] = useState<{ date: Date; daysUntil: number } | null>(null)
   const [showLegend, setShowLegend] = useState(false)
+  const [pinnedDates, setPinnedDates] = useState<PinnedDate[]>(loadPinnedDates)
 
   const maxDate = new Date(now.getFullYear(), now.getMonth() + 6, 1)
   const canGoNext = new Date(year, month + 1, 1) < maxDate
   const canGoPrev = year > now.getFullYear() || month > now.getMonth()
+
+  const pinnedSet = new Set(pinnedDates.map((p) => p.date))
 
   useEffect(() => {
     setNextFull(getNextFullMoon())
@@ -86,10 +107,85 @@ export function AstroCalendar({ lat, lng }: AstroCalendarProps) {
     else setMonth(month + 1)
   }
 
+  function togglePin(day: DayData) {
+    const date = day.moon.date
+    if (pinnedSet.has(date)) {
+      const updated = pinnedDates.filter((p) => p.date !== date)
+      setPinnedDates(updated)
+      savePinnedDates(updated)
+    } else {
+      const pin: PinnedDate = {
+        date,
+        label: new Date(date + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }),
+        mwScore: day.mw.score,
+        moonPhase: day.moon.phase.split(' ')[0],
+        moonIllum: day.moon.illumination,
+      }
+      const updated = [...pinnedDates, pin].sort((a, b) => a.date.localeCompare(b.date))
+      setPinnedDates(updated)
+      savePinnedDates(updated)
+    }
+  }
+
+  function removePin(date: string) {
+    const updated = pinnedDates.filter((p) => p.date !== date)
+    setPinnedDates(updated)
+    savePinnedDates(updated)
+  }
+
+  function goToDate(date: string) {
+    const d = new Date(date + 'T12:00:00')
+    setYear(d.getFullYear())
+    setMonth(d.getMonth())
+    // Select the day after render
+    setTimeout(() => {
+      setSelectedIdx(d.getDate() - 1)
+    }, 100)
+  }
+
   const selected = selectedIdx !== null ? days[selectedIdx] : null
 
   return (
     <div className="bg-bg-surface/50 border border-border rounded-xl p-6">
+      {/* Pinned dates strip */}
+      {pinnedDates.length > 0 && (
+        <div className="mb-4">
+          <div className="flex items-center gap-2 mb-2">
+            <span className="text-[10px] text-text-muted uppercase tracking-widest">Pinned Dates</span>
+          </div>
+          <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-thin">
+            {pinnedDates.map((pin) => {
+              const daysUntil = Math.ceil((new Date(pin.date + 'T12:00:00').getTime() - now.getTime()) / 86400000)
+              const isPast = daysUntil < 0
+              return (
+                <div
+                  key={pin.date}
+                  className={`shrink-0 bg-bg-primary/50 border border-border rounded-lg px-3 py-2 flex items-center gap-3 cursor-pointer hover:border-accent/30 transition-colors ${isPast ? 'opacity-50' : ''}`}
+                  onClick={() => goToDate(pin.date)}
+                >
+                  <span className="text-lg">{pin.moonPhase}</span>
+                  <div>
+                    <p className="text-xs text-text-primary font-medium">{pin.label}</p>
+                    <div className="flex items-center gap-2">
+                      <span className={`text-[10px] font-bold tabular-nums ${mwScoreColor(pin.mwScore)}`}>MW {pin.mwScore}</span>
+                      <span className="text-[9px] text-text-muted">{pin.moonIllum}% illum</span>
+                      {!isPast && <span className="text-[9px] text-accent">{daysUntil}d</span>}
+                    </div>
+                  </div>
+                  <button
+                    onClick={(e) => { e.stopPropagation(); removePin(pin.date) }}
+                    className="text-text-muted hover:text-astro-red text-xs ml-1"
+                    title="Unpin"
+                  >
+                    ✕
+                  </button>
+                </div>
+              )
+            })}
+          </div>
+        </div>
+      )}
+
       {/* Header */}
       <div className="flex items-center justify-between mb-1">
         <h2 className="text-lg font-light tracking-widest">
@@ -130,6 +226,9 @@ export function AstroCalendar({ lat, lng }: AstroCalendarProps) {
             <span><span className="text-astro-green font-medium">70+</span> Excellent MW night</span>
             <span><span className="text-astro-yellow font-medium">40-69</span> Fair</span>
             <span><span className="text-astro-red font-medium">0-39</span> Poor</span>
+          </div>
+          <div className="pt-1 border-t border-border">
+            Click a day to see details. Click the pin icon to save dates for quick reference.
           </div>
         </div>
       )}
@@ -173,11 +272,12 @@ export function AstroCalendar({ lat, lng }: AstroCalendarProps) {
             {days.map((day, i) => {
               const moonEmoji = day.moon.phase.split(' ')[0]
               const isSelected = selectedIdx === i
+              const isPinned = pinnedSet.has(day.moon.date)
               return (
                 <button
                   key={day.moon.date}
                   onClick={() => setSelectedIdx(isSelected ? null : i)}
-                  className={`rounded-lg p-1 flex flex-col items-center text-center transition-colors border min-h-[72px] ${
+                  className={`relative rounded-lg p-1 flex flex-col items-center text-center transition-colors border min-h-[72px] ${
                     mwScoreBg(day.mw.score)
                   } ${
                     day.moon.isFullMoon
@@ -185,15 +285,14 @@ export function AstroCalendar({ lat, lng }: AstroCalendarProps) {
                       : day.moon.isNewMoon
                         ? 'border-border'
                         : 'border-transparent'
-                  } ${isSelected ? 'ring-1 ring-accent' : 'hover:bg-bg-primary/30'}`}
+                  } ${isSelected ? 'ring-1 ring-accent' : 'hover:bg-bg-primary/30'} ${isPinned ? 'ring-1 ring-astro-yellow/40' : ''}`}
                 >
-                  {/* Day number */}
+                  {isPinned && (
+                    <span className="absolute top-0.5 right-0.5 text-[8px] text-astro-yellow">📌</span>
+                  )}
                   <span className="text-[9px] text-text-muted leading-none">{i + 1}</span>
-                  {/* Moon emoji */}
                   <span className="text-sm leading-none mt-0.5">{moonEmoji}</span>
-                  {/* Moon illumination */}
                   <span className="text-[8px] text-text-muted leading-none mt-0.5">{day.moon.illumination}%</span>
-                  {/* MW score */}
                   <span className={`text-[10px] font-bold tabular-nums leading-none mt-0.5 ${mwScoreColor(day.mw.score)}`}>
                     MW {day.mw.score}
                   </span>
@@ -209,7 +308,20 @@ export function AstroCalendar({ lat, lng }: AstroCalendarProps) {
                 <h3 className="text-sm font-medium text-text-primary">
                   {new Date(selected.moon.date + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}
                 </h3>
-                <button onClick={() => setSelectedIdx(null)} className="text-text-muted hover:text-text-primary text-xs">✕</button>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => togglePin(selected)}
+                    className={`text-xs px-2 py-1 rounded border transition-colors ${
+                      pinnedSet.has(selected.moon.date)
+                        ? 'border-astro-yellow/40 text-astro-yellow bg-astro-yellow/10'
+                        : 'border-border text-text-muted hover:text-astro-yellow hover:border-astro-yellow/40'
+                    }`}
+                    title={pinnedSet.has(selected.moon.date) ? 'Unpin this date' : 'Pin this date'}
+                  >
+                    {pinnedSet.has(selected.moon.date) ? '📌 Pinned' : '📌 Pin'}
+                  </button>
+                  <button onClick={() => setSelectedIdx(null)} className="text-text-muted hover:text-text-primary text-xs">✕</button>
+                </div>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
