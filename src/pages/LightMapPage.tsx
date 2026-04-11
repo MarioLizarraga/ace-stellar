@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react'
-import { MapContainer, TileLayer, WMSTileLayer, Marker, Popup, useMapEvents } from 'react-leaflet'
+import { MapContainer, TileLayer, Marker, Popup, useMapEvents } from 'react-leaflet'
 import L from 'leaflet'
 import { PageTransition } from '../components/layout/PageTransition'
 import { CitySearch } from '../components/dashboard/CitySearch'
@@ -35,10 +35,34 @@ const savedIcon = L.icon({
 })
 
 const OVERLAY_LAYERS = [
-  { id: 'viirs_2024', label: 'VIIRS 2024', layer: 'PostGIS:VIIRS_2024', style: 'viirs_annual' },
-  { id: 'viirs_2023', label: 'VIIRS 2023', layer: 'PostGIS:VIIRS_2023', style: 'viirs_annual' },
-  { id: 'sb_2024', label: 'Sky Brightness 2024', layer: 'PostGIS:SB_2024', style: 'WA' },
-  { id: 'wa_2015', label: 'World Atlas 2015', layer: 'PostGIS:WA_2015', style: 'WA' },
+  {
+    id: 'viirs_daily',
+    label: 'VIIRS Daily (Latest)',
+    url: 'https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/VIIRS_SNPP_DayNightBand_At_Sensor_Radiance/default/default/GoogleMapsCompatible_Level8/{z}/{y}/{x}.png',
+    maxZoom: 8,
+    attribution: 'NASA EOSDIS GIBS | VIIRS SNPP Day/Night Band',
+  },
+  {
+    id: 'viirs_noaa20',
+    label: 'VIIRS NOAA-20 Daily',
+    url: 'https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/VIIRS_NOAA20_DayNightBand_At_Sensor_Radiance/default/default/GoogleMapsCompatible_Level8/{z}/{y}/{x}.png',
+    maxZoom: 8,
+    attribution: 'NASA EOSDIS GIBS | VIIRS NOAA-20 Day/Night Band',
+  },
+  {
+    id: 'black_marble',
+    label: 'Black Marble (Annual)',
+    url: 'https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/VIIRS_Black_Marble/default/2016-01-01/GoogleMapsCompatible_Level8/{z}/{y}/{x}.png',
+    maxZoom: 8,
+    attribution: 'NASA EOSDIS GIBS | VIIRS Black Marble Nighttime Lights',
+  },
+  {
+    id: 'city_lights',
+    label: 'City Lights 2012',
+    url: 'https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/VIIRS_CityLights_2012/default/2012-01-01/GoogleMapsCompatible_Level8/{z}/{y}/{x}.jpg',
+    maxZoom: 8,
+    attribution: 'NASA EOSDIS GIBS | VIIRS City Lights 2012',
+  },
 ] as const
 
 interface ClickedPoint {
@@ -189,16 +213,13 @@ export function LightMapPage() {
               attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/">CARTO</a>'
             />
 
-            {/* Light pollution overlay */}
-            <WMSTileLayer
-              url="https://www.lightpollutionmap.info/geoserver/gwc/service/wms"
-              layers={currentOverlay.layer}
-              styles={currentOverlay.style}
-              format="image/png"
-              transparent={true}
-              version="1.1.0"
+            {/* Light pollution overlay — NASA GIBS VIIRS satellite data */}
+            <TileLayer
+              key={currentOverlay.id}
+              url={currentOverlay.url}
+              maxZoom={currentOverlay.maxZoom}
               opacity={opacity}
-              attribution='<a href="https://www.lightpollutionmap.info">lightpollutionmap.info</a> | Jurij Stare'
+              attribution={currentOverlay.attribution}
             />
 
             <MapClickHandler onClick={handleMapClick} />
