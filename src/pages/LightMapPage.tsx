@@ -265,16 +265,13 @@ export function LightMapPage() {
                             <p style={{ fontWeight: 600, fontSize: '14px', margin: 0 }}>Bortle {lightInfo.bortle}</p>
                             <p style={{ fontSize: '12px', color: '#666', margin: 0 }}>{BORTLE_INFO[lightInfo.bortle]?.label}</p>
                           </div>
-                          {lightInfo.source === 'world-atlas' && (
+                          {lightInfo.source === 'wms' && (
                             <span style={{ fontSize: '9px', color: '#4a6fa5', marginLeft: 'auto', background: '#e8f0fe', padding: '1px 6px', borderRadius: '8px' }}>live</span>
                           )}
                         </div>
                         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '4px', fontSize: '11px', color: '#555', marginBottom: '4px' }}>
                           <span>SQM: <strong>{lightInfo.sqm}</strong> mag/arcsec²</span>
                           <span>Brightness: <strong>{lightInfo.artificialBrightness}</strong> mcd/m²</span>
-                          {lightInfo.viirsRadiance !== null && (
-                            <span>VIIRS: <strong>{lightInfo.viirsRadiance}</strong>/255</span>
-                          )}
                         </div>
                         <p style={{ fontSize: '10px', color: '#888', marginTop: '4px', marginBottom: 0, lineHeight: 1.4 }}>
                           {BORTLE_INFO[lightInfo.bortle]?.description}
