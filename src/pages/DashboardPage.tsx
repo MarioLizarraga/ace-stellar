@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { PageTransition } from '../components/layout/PageTransition'
 import { LocationSelector } from '../components/dashboard/LocationSelector'
 import { AstroCalendar } from '../components/dashboard/AstroCalendar'
@@ -11,6 +11,7 @@ import {
   clearGitHubToken,
   addLocationToRepo,
   removeLocationFromRepo,
+  saveLocationsToRepo,
   verifyToken,
 } from '../lib/github-api'
 import locationsData from '../data/locations.json'
@@ -20,6 +21,8 @@ const allLocations = locationsData as SavedLocation[]
 
 export function DashboardPage() {
   const [locations, setLocations] = useState(allLocations)
+  const dragItem = useRef<number | null>(null)
+  const dragOverItem = useRef<number | null>(null)
   const [selectedLocationId, setSelectedLocationId] = useState(locations[0]?.id || '')
   const selectedLocation = locations.find((l) => l.id === selectedLocationId) || locations[0]
   const [showAddForm, setShowAddForm] = useState(false)
@@ -191,7 +194,7 @@ export function DashboardPage() {
         )}
 
         <div className="mb-6">
-          <AstroCalendar lat={selectedLocation.lat} lng={selectedLocation.lng} bortle={selectedLocation.bortle} />
+          <AstroCalendar lat={selectedLocation.lat} lng={selectedLocation.lng} />
         </div>
 
         <div className="space-y-4">
@@ -278,12 +281,39 @@ export function DashboardPage() {
             </div>
           )}
 
-          {locations.map((loc) => (
-            <WeatherStation
+          {locations.map((loc, index) => (
+            <div
               key={loc.id}
-              location={loc}
-              onRemove={() => handleRemoveLocation(loc.id)}
-            />
+              draggable
+              onDragStart={() => { dragItem.current = index }}
+              onDragEnter={() => { dragOverItem.current = index }}
+              onDragOver={(e) => e.preventDefault()}
+              onDragEnd={async () => {
+                if (dragItem.current === null || dragOverItem.current === null || dragItem.current === dragOverItem.current) return
+                const reordered = [...locations]
+                const [dragged] = reordered.splice(dragItem.current, 1)
+                reordered.splice(dragOverItem.current, 0, dragged)
+                dragItem.current = null
+                dragOverItem.current = null
+                setLocations(reordered)
+                if (ghConfigured) {
+                  try { await saveLocationsToRepo(reordered) } catch { /* silent */ }
+                }
+              }}
+              className="cursor-grab active:cursor-grabbing"
+            >
+              <WeatherStation
+                location={loc}
+                onRemove={() => handleRemoveLocation(loc.id)}
+                dragHandle={
+                  <div className="flex flex-col gap-0.5 py-2 px-1 text-text-muted shrink-0 cursor-grab" title="Drag to reorder">
+                    <div className="w-4 h-0.5 bg-text-muted/40 rounded" />
+                    <div className="w-4 h-0.5 bg-text-muted/40 rounded" />
+                    <div className="w-4 h-0.5 bg-text-muted/40 rounded" />
+                  </div>
+                }
+              />
+            </div>
           ))}
         </div>
       </div>

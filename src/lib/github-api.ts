@@ -84,6 +84,12 @@ export interface SavedLocationData {
 
 const LOCATIONS_PATH = 'src/data/locations.json'
 
+export async function saveLocationsToRepo(locations: SavedLocationData[]): Promise<void> {
+  const file = await getFile(LOCATIONS_PATH)
+  const newContent = JSON.stringify(locations, null, 2) + '\n'
+  await updateFile(LOCATIONS_PATH, newContent, file.sha, 'feat: reorder locations')
+}
+
 export async function addLocationToRepo(location: SavedLocationData): Promise<void> {
   const file = await getFile(LOCATIONS_PATH)
   const locations: SavedLocationData[] = JSON.parse(file.content)
