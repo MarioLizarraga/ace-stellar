@@ -20,7 +20,20 @@ function renderMarkdown(body: string) {
     const trimmed = block.trim()
     if (!trimmed) return null
 
-    // Heading ##
+    // Heading ### (h3 — subheading)
+    if (trimmed.startsWith('### ')) {
+      const text = trimmed.slice(4)
+      return (
+        <h3
+          key={i}
+          className="text-lg font-semibold text-text-primary mt-8 mb-3 tracking-wide"
+        >
+          {renderInline(text)}
+        </h3>
+      )
+    }
+
+    // Heading ## (h2 — section heading)
     if (trimmed.startsWith('## ')) {
       const text = trimmed.slice(3)
       return (
@@ -28,7 +41,7 @@ function renderMarkdown(body: string) {
           key={i}
           className="text-xl font-semibold text-text-primary mt-10 mb-4 tracking-wide"
         >
-          {text}
+          {renderInline(text)}
         </h2>
       )
     }
