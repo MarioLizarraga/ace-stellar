@@ -8,6 +8,7 @@ import { GalleryPage } from './pages/GalleryPage'
 import { ExplorePage } from './pages/ExplorePage'
 import { LearnPage } from './pages/LearnPage'
 import { ArticlePage } from './pages/ArticlePage'
+import { LightMapPage } from './pages/LightMapPage'
 
 function AnimatedRoutes() {
   const location = useLocation()
@@ -20,6 +21,7 @@ function AnimatedRoutes() {
         <Route path="/learn/:slug" element={<ArticlePage />} />
         <Route path="/gallery" element={<GalleryPage />} />
         <Route path="/explore" element={<ExplorePage />} />
+        <Route path="/light-map" element={<LightMapPage />} />
       </Routes>
     </AnimatePresence>
   )

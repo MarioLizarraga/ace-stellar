@@ -7,6 +7,7 @@ const navItems = [
   { to: '/learn', label: 'Learn' },
   { to: '/gallery', label: 'Gallery' },
   { to: '/explore', label: 'Explore' },
+  { to: '/light-map', label: 'Light Map' },
 ]
 
 export function Navbar() {
