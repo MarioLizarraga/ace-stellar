@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef } from 'react'
+import { useState, useCallback, useRef, useEffect } from 'react'
 import { MapContainer, TileLayer, Marker, Popup, useMapEvents, useMap } from 'react-leaflet'
 import L from 'leaflet'
 import { PageTransition } from '../components/layout/PageTransition'
@@ -65,12 +65,47 @@ const OVERLAY_LAYERS = [
   },
 ] as const
 
+// Light pollution data is fetched from NASA GIBS tiles via pixel sampling
+
 interface ClickedPoint {
   lat: number
   lng: number
 }
 
-// Light pollution data is fetched from lightpollutionmap.info's WMS GetFeatureInfo
+function LightInfoCard({ data, loading }: { data: LightPollutionResult | null; loading: boolean }) {
+  if (loading) {
+    return <p style={{ fontSize: '12px', color: '#888', marginBottom: '8px' }}>Analyzing light pollution...</p>
+  }
+  if (!data || data.source === 'fallback') return null
+
+  const info = BORTLE_INFO[data.bortle]
+  return (
+    <div style={{ background: '#f5f5f5', borderRadius: '6px', padding: '10px', marginBottom: '10px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
+        <div style={{
+          width: '32px', height: '32px', borderRadius: '50%', border: '2px solid #ddd',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          fontSize: '14px', fontWeight: 700, color: '#fff',
+          backgroundColor: info?.color || '#333',
+        }}>
+          {data.bortle}
+        </div>
+        <div>
+          <p style={{ fontWeight: 600, fontSize: '14px', margin: 0 }}>Bortle {data.bortle}</p>
+          <p style={{ fontSize: '12px', color: '#666', margin: 0 }}>{info?.label}</p>
+        </div>
+        <span style={{ fontSize: '9px', color: '#4a6fa5', marginLeft: 'auto', background: '#e8f0fe', padding: '1px 6px', borderRadius: '8px' }}>satellite</span>
+      </div>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '4px', fontSize: '11px', color: '#555', marginBottom: '4px' }}>
+        <span>SQM: <strong>~{data.sqm}</strong> mag/arcsec²</span>
+        <span>Satellite: <strong>{data.brightness}</strong>/255</span>
+      </div>
+      <p style={{ fontSize: '10px', color: '#888', marginTop: '4px', marginBottom: 0, lineHeight: 1.4 }}>
+        {info?.description}
+      </p>
+    </div>
+  )
+}
 
 function MapClickHandler({ onClick }: { onClick: (coords: ClickedPoint) => void }) {
   useMapEvents({
@@ -103,7 +138,25 @@ export function LightMapPage() {
   const [statusMsg, setStatusMsg] = useState<string | null>(null)
   const [flyTo, setFlyTo] = useState<{ center: [number, number]; zoom: number }>({ center: [30, -98], zoom: 4 })
 
+  // Light pollution data for saved locations
+  const [savedLightData, setSavedLightData] = useState<Record<string, LightPollutionResult>>({})
+
   const currentOverlay = OVERLAY_LAYERS.find((l) => l.id === activeLayer) || OVERLAY_LAYERS[0]
+
+  // Fetch light pollution for all saved locations on mount
+  useEffect(() => {
+    async function fetchAllSaved() {
+      const results: Record<string, LightPollutionResult> = {}
+      for (const loc of savedLocations) {
+        // Stagger to avoid hammering
+        await new Promise((r) => setTimeout(r, 200))
+        const data = await fetchLightPollution(loc.lat, loc.lng)
+        results[loc.id] = data
+      }
+      setSavedLightData(results)
+    }
+    fetchAllSaved()
+  }, [])
 
   const handleMapClick = useCallback(async (coords: ClickedPoint) => {
     setClickedPoint(coords)
@@ -120,12 +173,13 @@ export function LightMapPage() {
   async function handleSaveLocation() {
     if (!clickedPoint || !saveName.trim()) return
 
+    const bortle = parseInt(saveBortle, 10) || 5
     const newLoc: SavedLocation = {
       id: saveName.trim().toLowerCase().replace(/\s+/g, '-'),
       name: saveName.trim(),
       lat: Math.round(clickedPoint.lat * 10000) / 10000,
       lng: Math.round(clickedPoint.lng * 10000) / 10000,
-      bortle: parseInt(saveBortle, 10) || 5,
+      bortle,
     }
 
     setSaving(true)
@@ -237,49 +291,17 @@ export function LightMapPage() {
 
             <MapClickHandler onClick={handleMapClick} />
 
+            {/* Clicked point marker */}
             {clickedPoint && (
               <Marker position={[clickedPoint.lat, clickedPoint.lng]} icon={defaultIcon}>
                 <Popup minWidth={280} maxWidth={320}>
                   <div style={{ color: '#0a0a1a' }}>
-                    {/* Coordinates */}
                     <p style={{ fontWeight: 600, marginBottom: '8px', fontSize: '13px' }}>
                       {clickedPoint.lat.toFixed(4)}, {clickedPoint.lng.toFixed(4)}
                     </p>
 
-                    {/* Light pollution info */}
-                    {lightLoading && (
-                      <p style={{ fontSize: '12px', color: '#888', marginBottom: '8px' }}>Analyzing light pollution...</p>
-                    )}
-                    {lightInfo && (
-                      <div style={{ background: '#f5f5f5', borderRadius: '6px', padding: '10px', marginBottom: '10px' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
-                          <div style={{
-                            width: '32px', height: '32px', borderRadius: '50%', border: '2px solid #ddd',
-                            display: 'flex', alignItems: 'center', justifyContent: 'center',
-                            fontSize: '14px', fontWeight: 700, color: '#fff',
-                            backgroundColor: BORTLE_INFO[lightInfo.bortle]?.color || '#333',
-                          }}>
-                            {lightInfo.bortle}
-                          </div>
-                          <div>
-                            <p style={{ fontWeight: 600, fontSize: '14px', margin: 0 }}>Bortle {lightInfo.bortle}</p>
-                            <p style={{ fontSize: '12px', color: '#666', margin: 0 }}>{BORTLE_INFO[lightInfo.bortle]?.label}</p>
-                          </div>
-                          {lightInfo.source === 'satellite' && (
-                            <span style={{ fontSize: '9px', color: '#4a6fa5', marginLeft: 'auto', background: '#e8f0fe', padding: '1px 6px', borderRadius: '8px' }}>live</span>
-                          )}
-                        </div>
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '4px', fontSize: '11px', color: '#555', marginBottom: '4px' }}>
-                          <span>SQM: <strong>~{lightInfo.sqm}</strong> mag/arcsec²</span>
-                          <span>Satellite: <strong>{lightInfo.brightness}</strong>/255</span>
-                        </div>
-                        <p style={{ fontSize: '10px', color: '#888', marginTop: '4px', marginBottom: 0, lineHeight: 1.4 }}>
-                          {BORTLE_INFO[lightInfo.bortle]?.description}
-                        </p>
-                      </div>
-                    )}
+                    <LightInfoCard data={lightInfo} loading={lightLoading} />
 
-                    {/* Save form */}
                     <input
                       value={saveName}
                       onChange={(e) => setSaveName(e.target.value)}
@@ -313,28 +335,59 @@ export function LightMapPage() {
               </Marker>
             )}
 
-            {savedLocations.map((loc) => (
-              <Marker key={loc.id} position={[loc.lat, loc.lng]} icon={savedIcon}>
-                <Popup>
-                  <div style={{ color: '#0a0a1a' }}>
-                    <p style={{ fontWeight: 600, marginBottom: '2px' }}>{loc.name}</p>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                      <div style={{
-                        width: '18px', height: '18px', borderRadius: '50%', border: '1px solid #ddd',
-                        display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        fontSize: '10px', fontWeight: 700, color: '#fff',
-                        backgroundColor: BORTLE_INFO[loc.bortle]?.color || '#333',
-                      }}>
-                        {loc.bortle}
+            {/* Saved locations with light pollution info */}
+            {savedLocations.map((loc) => {
+              const locLight = savedLightData[loc.id]
+              const displayBortle = locLight?.source === 'satellite' ? locLight.bortle : loc.bortle
+              const info = BORTLE_INFO[displayBortle]
+              return (
+                <Marker key={loc.id} position={[loc.lat, loc.lng]} icon={savedIcon}>
+                  <Popup minWidth={260}>
+                    <div style={{ color: '#0a0a1a' }}>
+                      <p style={{ fontWeight: 600, fontSize: '14px', marginBottom: '4px' }}>{loc.name}</p>
+                      <p style={{ fontSize: '11px', color: '#888', marginBottom: '8px' }}>
+                        {loc.lat.toFixed(4)}, {loc.lng.toFixed(4)}
+                      </p>
+
+                      <div style={{ background: '#f5f5f5', borderRadius: '6px', padding: '10px', marginBottom: '6px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
+                          <div style={{
+                            width: '28px', height: '28px', borderRadius: '50%', border: '2px solid #ddd',
+                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            fontSize: '12px', fontWeight: 700, color: '#fff',
+                            backgroundColor: info?.color || '#333',
+                          }}>
+                            {displayBortle}
+                          </div>
+                          <div>
+                            <p style={{ fontWeight: 600, fontSize: '13px', margin: 0 }}>Bortle {displayBortle}</p>
+                            <p style={{ fontSize: '11px', color: '#666', margin: 0 }}>{info?.label}</p>
+                          </div>
+                          {locLight?.source === 'satellite' && (
+                            <span style={{ fontSize: '9px', color: '#4a6fa5', marginLeft: 'auto', background: '#e8f0fe', padding: '1px 6px', borderRadius: '8px' }}>satellite</span>
+                          )}
+                        </div>
+                        {locLight?.source === 'satellite' && (
+                          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '4px', fontSize: '11px', color: '#555', marginBottom: '4px' }}>
+                            <span>SQM: <strong>~{locLight.sqm}</strong></span>
+                            <span>Brightness: <strong>{locLight.brightness}</strong>/255</span>
+                          </div>
+                        )}
+                        <p style={{ fontSize: '10px', color: '#888', margin: 0, lineHeight: 1.4 }}>
+                          {info?.description}
+                        </p>
                       </div>
-                      <span style={{ fontSize: '11px', color: '#666' }}>
-                        Bortle {loc.bortle} — {BORTLE_INFO[loc.bortle]?.label}
-                      </span>
+
+                      {locLight?.source === 'satellite' && locLight.bortle !== loc.bortle && (
+                        <p style={{ fontSize: '10px', color: '#c04020', margin: 0 }}>
+                          Stored Bortle: {loc.bortle} — satellite suggests {locLight.bortle}
+                        </p>
+                      )}
                     </div>
-                  </div>
-                </Popup>
-              </Marker>
-            ))}
+                  </Popup>
+                </Marker>
+              )
+            })}
           </MapContainer>
 
           {/* Legend */}
