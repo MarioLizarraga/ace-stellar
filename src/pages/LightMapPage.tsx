@@ -1,5 +1,6 @@
 import { useState, useCallback, useRef, useEffect } from 'react'
 import { MapContainer, TileLayer, Marker, Popup, useMapEvents, useMap } from 'react-leaflet'
+import type { Marker as LeafletMarker } from 'leaflet'
 import L from 'leaflet'
 import { PageTransition } from '../components/layout/PageTransition'
 import { CitySearch } from '../components/dashboard/CitySearch'
@@ -126,6 +127,16 @@ function FlyToHandler({ center, zoom }: { center: [number, number]; zoom: number
   return null
 }
 
+function AutoOpenMarker({ children, ...props }: React.ComponentProps<typeof Marker>) {
+  const markerRef = useRef<LeafletMarker | null>(null)
+  useEffect(() => {
+    if (markerRef.current) {
+      markerRef.current.openPopup()
+    }
+  }, [])
+  return <Marker ref={markerRef} {...props}>{children}</Marker>
+}
+
 export function LightMapPage() {
   const [activeLayer, setActiveLayer] = useState('city_lights')
   const [opacity, setOpacity] = useState(0.7)
@@ -133,7 +144,6 @@ export function LightMapPage() {
   const [lightInfo, setLightInfo] = useState<LightPollutionResult | null>(null)
   const [lightLoading, setLightLoading] = useState(false)
   const [saveName, setSaveName] = useState('')
-  const [saveBortle, setSaveBortle] = useState('5')
   const [saving, setSaving] = useState(false)
   const [statusMsg, setStatusMsg] = useState<string | null>(null)
   const [flyTo, setFlyTo] = useState<{ center: [number, number]; zoom: number }>({ center: [30, -98], zoom: 4 })
@@ -166,14 +176,13 @@ export function LightMapPage() {
 
     const info = await fetchLightPollution(coords.lat, coords.lng)
     setLightInfo(info)
-    setSaveBortle(info.bortle.toString())
     setLightLoading(false)
   }, [])
 
   async function handleSaveLocation() {
     if (!clickedPoint || !saveName.trim()) return
 
-    const bortle = parseInt(saveBortle, 10) || 5
+    const bortle = lightInfo?.source === 'satellite' ? lightInfo.bortle : 5
     const newLoc: SavedLocation = {
       id: saveName.trim().toLowerCase().replace(/\s+/g, '-'),
       name: saveName.trim(),
@@ -215,7 +224,7 @@ export function LightMapPage() {
     setLightLoading(true)
     fetchLightPollution(city.latitude, city.longitude).then((info) => {
       setLightInfo(info)
-      setSaveBortle(info.bortle.toString())
+      // bortle auto-set from satellite data
       setLightLoading(false)
     })
   }
@@ -291,9 +300,9 @@ export function LightMapPage() {
 
             <MapClickHandler onClick={handleMapClick} />
 
-            {/* Clicked point marker */}
+            {/* Clicked point marker — popup opens automatically */}
             {clickedPoint && (
-              <Marker position={[clickedPoint.lat, clickedPoint.lng]} icon={defaultIcon}>
+              <AutoOpenMarker position={[clickedPoint.lat, clickedPoint.lng]} icon={defaultIcon}>
                 <Popup minWidth={280} maxWidth={320}>
                   <div style={{ color: '#0a0a1a' }}>
                     <p style={{ fontWeight: 600, marginBottom: '8px', fontSize: '13px' }}>
@@ -306,19 +315,8 @@ export function LightMapPage() {
                       value={saveName}
                       onChange={(e) => setSaveName(e.target.value)}
                       placeholder="Location name"
-                      style={{ width: '100%', padding: '6px 8px', border: '1px solid #ccc', borderRadius: '4px', fontSize: '13px', marginBottom: '6px', boxSizing: 'border-box' }}
+                      style={{ width: '100%', padding: '6px 8px', border: '1px solid #ccc', borderRadius: '4px', fontSize: '13px', marginBottom: '8px', boxSizing: 'border-box' }}
                     />
-                    <div style={{ display: 'flex', gap: '4px', marginBottom: '8px' }}>
-                      <select
-                        value={saveBortle}
-                        onChange={(e) => setSaveBortle(e.target.value)}
-                        style={{ flex: 1, padding: '4px', border: '1px solid #ccc', borderRadius: '4px', fontSize: '12px' }}
-                      >
-                        {[1,2,3,4,5,6,7,8,9].map((b) => (
-                          <option key={b} value={b}>Bortle {b} — {BORTLE_INFO[b]?.label}</option>
-                        ))}
-                      </select>
-                    </div>
                     <button
                       onClick={handleSaveLocation}
                       disabled={saving || !saveName.trim()}
@@ -332,7 +330,7 @@ export function LightMapPage() {
                     </button>
                   </div>
                 </Popup>
-              </Marker>
+              </AutoOpenMarker>
             )}
 
             {/* Saved locations with light pollution info */}
@@ -378,11 +376,6 @@ export function LightMapPage() {
                         </p>
                       </div>
 
-                      {locLight?.source === 'satellite' && locLight.bortle !== loc.bortle && (
-                        <p style={{ fontSize: '10px', color: '#c04020', margin: 0 }}>
-                          Stored Bortle: {loc.bortle} — satellite suggests {locLight.bortle}
-                        </p>
-                      )}
                     </div>
                   </Popup>
                 </Marker>
