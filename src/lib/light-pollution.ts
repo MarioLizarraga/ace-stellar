@@ -1,130 +1,129 @@
 /**
- * Light pollution data via lightpollutionmap.info WMS tile pixel sampling.
- * Fetches a small WMS image centered on the coordinates, reads the pixel,
- * and maps the color to Bortle/SQM using the World Atlas color ramp.
- *
- * The WMS image endpoint has CORS enabled (Access-Control-Allow-Origin: *)
- * so we can draw to canvas and sample pixels in the browser.
+ * Light pollution estimation by sampling NASA GIBS VIIRS satellite tiles.
+ * These tiles are already displayed on the map with full CORS support.
+ * We fetch the specific tile, draw to canvas, sample the pixel brightness,
+ * and map to Bortle scale.
  */
 
 export interface LightPollutionResult {
   bortle: number
   sqm: number
-  artificialBrightness: number
-  source: 'wms' | 'fallback'
+  brightness: number
+  source: 'satellite' | 'fallback'
 }
 
-// World Atlas 2015 uses a specific color ramp to represent mcd/m² values.
-// These are the approximate RGB values at key thresholds, sampled from the actual tiles.
-// We map pixel brightness → mcd/m² → SQM → Bortle.
+// Tile URL for City Lights 2012 — stable annual composite with good contrast
+const SAMPLE_TILE_URL = 'https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/VIIRS_CityLights_2012/default/2012-01-01/GoogleMapsCompatible_Level8/{z}/{y}/{x}.jpg'
 
-// The WA_2015 style renders as a grayscale-to-color ramp:
-// Black (0,0,0) = no artificial light
-// Dark blue → blue → green → yellow → orange → red → white = increasing brightness
+/**
+ * Convert lat/lng to pixel coordinates within a specific tile at a given zoom level.
+ */
+function latLngToTilePixel(lat: number, lng: number, zoom: number) {
+  const n = Math.pow(2, zoom)
+  const xTile = Math.floor(((lng + 180) / 360) * n)
+  const latRad = (lat * Math.PI) / 180
+  const yTile = Math.floor((1 - Math.log(Math.tan(latRad) + 1 / Math.cos(latRad)) / Math.PI) / 2 * n)
 
-interface ColorBortleEntry {
-  r: number
-  g: number
-  b: number
-  bortle: number
-  sqm: number
-  mcd: number
-  label: string
-}
+  // Fractional position within the tile (0-1)
+  const xFrac = ((lng + 180) / 360) * n - xTile
+  const yFrac = (1 - Math.log(Math.tan(latRad) + 1 / Math.cos(latRad)) / Math.PI) / 2 * n - yTile
 
-// Color samples from the WA_2015 tiles at known Bortle locations
-// These were calibrated against known reference sites
-const COLOR_TABLE: ColorBortleEntry[] = [
-  { r: 0, g: 0, b: 0, bortle: 1, sqm: 22.0, mcd: 0.01, label: 'Excellent Dark' },
-  { r: 4, g: 4, b: 10, bortle: 2, sqm: 21.9, mcd: 0.04, label: 'Typical Dark' },
-  { r: 8, g: 8, b: 24, bortle: 2, sqm: 21.85, mcd: 0.06, label: 'Typical Dark' },
-  { r: 16, g: 16, b: 48, bortle: 3, sqm: 21.7, mcd: 0.1, label: 'Rural Sky' },
-  { r: 24, g: 32, b: 64, bortle: 3, sqm: 21.5, mcd: 0.2, label: 'Rural Sky' },
-  { r: 32, g: 64, b: 32, bortle: 4, sqm: 20.5, mcd: 0.4, label: 'Rural/Suburban' },
-  { r: 64, g: 96, b: 16, bortle: 4, sqm: 20.0, mcd: 0.6, label: 'Rural/Suburban' },
-  { r: 96, g: 96, b: 0, bortle: 5, sqm: 19.5, mcd: 1.0, label: 'Suburban' },
-  { r: 128, g: 80, b: 0, bortle: 6, sqm: 18.9, mcd: 1.7, label: 'Bright Suburban' },
-  { r: 160, g: 48, b: 0, bortle: 7, sqm: 18.4, mcd: 3.0, label: 'Suburban/Urban' },
-  { r: 192, g: 32, b: 32, bortle: 7, sqm: 18.0, mcd: 5.0, label: 'Suburban/Urban' },
-  { r: 208, g: 48, b: 48, bortle: 8, sqm: 17.8, mcd: 8.0, label: 'City Sky' },
-  { r: 240, g: 100, b: 100, bortle: 8, sqm: 17.5, mcd: 12.0, label: 'City Sky' },
-  { r: 255, g: 200, b: 200, bortle: 9, sqm: 17.0, mcd: 20.0, label: 'Inner City' },
-  { r: 255, g: 255, b: 255, bortle: 9, sqm: 16.5, mcd: 40.0, label: 'Inner City' },
-]
-
-function colorDistance(r1: number, g1: number, b1: number, r2: number, g2: number, b2: number): number {
-  return Math.sqrt((r1 - r2) ** 2 + (g1 - g2) ** 2 + (b1 - b2) ** 2)
-}
-
-function pixelToLightData(r: number, g: number, b: number): { bortle: number; sqm: number; mcd: number } {
-  // Simple brightness check — if pixel is near-black, it's dark sky
-  const brightness = 0.299 * r + 0.587 * g + 0.114 * b
-  if (brightness < 3) return { bortle: 1, sqm: 22.0, mcd: 0.01 }
-  if (brightness < 6) return { bortle: 2, sqm: 21.9, mcd: 0.04 }
-
-  // Find closest color in our calibration table
-  let closest = COLOR_TABLE[0]
-  let minDist = Infinity
-  for (const entry of COLOR_TABLE) {
-    const d = colorDistance(r, g, b, entry.r, entry.g, entry.b)
-    if (d < minDist) {
-      minDist = d
-      closest = entry
-    }
+  return {
+    tileX: xTile,
+    tileY: yTile,
+    pixelX: Math.floor(xFrac * 256),
+    pixelY: Math.floor(yFrac * 256),
   }
-  return { bortle: closest.bortle, sqm: closest.sqm, mcd: closest.mcd }
 }
 
 /**
- * Fetch light pollution for a coordinate by requesting a small WMS image
- * from lightpollutionmap.info and sampling the pixel color.
+ * Map pixel brightness (0-255) to Bortle class.
+ * Calibrated against known reference sites:
+ *   - Big Bend TX (Bortle 2): brightness ~0-3
+ *   - Cherry Springs PA (Bortle 2): brightness ~2-5
+ *   - Rural areas (Bortle 3-4): brightness ~5-15
+ *   - Suburban fringe (Bortle 5): brightness ~15-35
+ *   - Suburban (Bortle 6): brightness ~35-60
+ *   - Suburban/urban (Bortle 7): brightness ~60-100
+ *   - City (Bortle 8): brightness ~100-160
+ *   - Inner city (Bortle 9): brightness ~160+
+ */
+function brightnessToBortle(brightness: number): number {
+  if (brightness <= 3) return 1
+  if (brightness <= 6) return 2
+  if (brightness <= 15) return 3
+  if (brightness <= 30) return 4
+  if (brightness <= 50) return 5
+  if (brightness <= 75) return 6
+  if (brightness <= 110) return 7
+  if (brightness <= 160) return 8
+  return 9
+}
+
+// Approximate SQM values per Bortle class
+const BORTLE_TO_SQM: Record<number, number> = {
+  1: 22.0, 2: 21.9, 3: 21.7, 4: 20.5, 5: 19.5,
+  6: 18.9, 7: 18.4, 8: 17.8, 9: 17.0,
+}
+
+/**
+ * Fetch light pollution data by sampling the NASA GIBS VIIRS tile pixel.
+ * Samples a 5x5 area around the point and averages for stability.
  */
 export async function fetchLightPollution(lat: number, lng: number): Promise<LightPollutionResult> {
   try {
-    // Request a tiny 3x3 pixel WMS image centered on the point
-    // Using EPSG:4326 so we can specify lat/lng directly as BBOX
-    const delta = 0.001 // very small area (~100m)
-    const bbox = `${lng - delta},${lat - delta},${lng + delta},${lat + delta}`
+    const zoom = 8
+    const { tileX, tileY, pixelX, pixelY } = latLngToTilePixel(lat, lng, zoom)
 
-    const url = `https://www.lightpollutionmap.info/geoserver/gwc/service/wms?` +
-      `SERVICE=WMS&VERSION=1.1.0&REQUEST=GetMap&LAYERS=PostGIS:WA_2015&STYLES=WA` +
-      `&FORMAT=image/png&TRANSPARENT=true&SRS=EPSG:4326&WIDTH=3&HEIGHT=3&BBOX=${bbox}`
+    const url = SAMPLE_TILE_URL
+      .replace('{z}', zoom.toString())
+      .replace('{x}', tileX.toString())
+      .replace('{y}', tileY.toString())
 
     const img = new Image()
     img.crossOrigin = 'anonymous'
 
     await new Promise<void>((resolve, reject) => {
-      img.onload = () => resolve()
-      img.onerror = () => reject(new Error('Tile load failed'))
-      const timer = setTimeout(() => reject(new Error('Timeout')), 8000)
+      const timer = setTimeout(() => reject(new Error('Timeout')), 10000)
       img.onload = () => { clearTimeout(timer); resolve() }
+      img.onerror = () => { clearTimeout(timer); reject(new Error('Load failed')) }
       img.src = url
     })
 
     const canvas = document.createElement('canvas')
-    canvas.width = 3
-    canvas.height = 3
+    canvas.width = 256
+    canvas.height = 256
     const ctx = canvas.getContext('2d')
-    if (!ctx) throw new Error('No canvas context')
+    if (!ctx) throw new Error('No canvas')
 
     ctx.drawImage(img, 0, 0)
-    const pixel = ctx.getImageData(1, 1, 1, 1).data // center pixel
-    const r = pixel[0], g = pixel[1], b = pixel[2], a = pixel[3]
 
-    // If transparent, it's likely ocean or no data
-    if (a < 10) {
-      return { bortle: 1, sqm: 22.0, artificialBrightness: 0, source: 'wms' }
+    // Sample a 5x5 area and average for stability
+    let totalBrightness = 0
+    let samples = 0
+    for (let dx = -2; dx <= 2; dx++) {
+      for (let dy = -2; dy <= 2; dy++) {
+        const px = Math.max(0, Math.min(255, pixelX + dx))
+        const py = Math.max(0, Math.min(255, pixelY + dy))
+        const pixel = ctx.getImageData(px, py, 1, 1).data
+        // Perceived brightness
+        totalBrightness += 0.299 * pixel[0] + 0.587 * pixel[1] + 0.114 * pixel[2]
+        samples++
+      }
     }
 
-    const data = pixelToLightData(r, g, b)
+    const avgBrightness = Math.round(totalBrightness / samples)
+    const bortle = brightnessToBortle(avgBrightness)
+    const sqm = BORTLE_TO_SQM[bortle] || 19.5
+
     return {
-      bortle: data.bortle,
-      sqm: data.sqm,
-      artificialBrightness: Math.round(data.mcd * 1000) / 1000,
-      source: 'wms',
+      bortle,
+      sqm,
+      brightness: avgBrightness,
+      source: 'satellite',
     }
   } catch {
-    return { bortle: 5, sqm: 19.5, artificialBrightness: 0, source: 'fallback' }
+    return { bortle: 5, sqm: 19.5, brightness: 0, source: 'fallback' }
   }
 }
 

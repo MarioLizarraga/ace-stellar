@@ -270,8 +270,8 @@ export function LightMapPage() {
                           )}
                         </div>
                         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '4px', fontSize: '11px', color: '#555', marginBottom: '4px' }}>
-                          <span>SQM: <strong>{lightInfo.sqm}</strong> mag/arcsec²</span>
-                          <span>Brightness: <strong>{lightInfo.artificialBrightness}</strong> mcd/m²</span>
+                          <span>SQM: <strong>~{lightInfo.sqm}</strong> mag/arcsec²</span>
+                          <span>Satellite: <strong>{lightInfo.brightness}</strong>/255</span>
                         </div>
                         <p style={{ fontSize: '10px', color: '#888', marginTop: '4px', marginBottom: 0, lineHeight: 1.4 }}>
                           {BORTLE_INFO[lightInfo.bortle]?.description}
