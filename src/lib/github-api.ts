@@ -136,6 +136,57 @@ export async function updatePhotoInRepo(updatedPhoto: Photo): Promise<void> {
   await updateFile(PHOTOS_PATH, newContent, file.sha, `feat: update photo "${updatedPhoto.title}"`)
 }
 
+// --- Pinned Dates CRUD ---
+
+export interface PinnedDateData {
+  date: string
+  label: string
+  mwScore: number
+  moonPhase: string
+  moonIllum: number
+}
+
+const PINNED_DATES_PATH = 'src/data/pinned-dates.json'
+
+export async function savePinnedDatesToRepo(pins: PinnedDateData[]): Promise<void> {
+  let sha: string | undefined
+  try {
+    const file = await getFile(PINNED_DATES_PATH)
+    sha = file.sha
+  } catch {
+    // File doesn't exist yet — create it
+  }
+  const newContent = JSON.stringify(pins, null, 2) + '\n'
+  if (sha) {
+    await updateFile(PINNED_DATES_PATH, newContent, sha, 'feat: update pinned dates')
+  } else {
+    // Create new file
+    const token = getToken()
+    if (!token) throw new Error('GitHub token not configured')
+    const response = await fetch(
+      `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/${PINNED_DATES_PATH}`,
+      {
+        method: 'PUT',
+        headers: { Authorization: `Bearer ${token}`, Accept: 'application/vnd.github.v3+json' },
+        body: JSON.stringify({ message: 'feat: create pinned dates', content: utf8ToBase64(newContent) }),
+      },
+    )
+    if (!response.ok) {
+      const err = await response.json()
+      throw new Error(err.message || `Create failed: ${response.status}`)
+    }
+  }
+}
+
+export async function loadPinnedDatesFromRepo(): Promise<PinnedDateData[]> {
+  try {
+    const file = await getFile(PINNED_DATES_PATH)
+    return JSON.parse(file.content)
+  } catch {
+    return []
+  }
+}
+
 export async function uploadImageToRepo(
   fileName: string,
   base64Content: string,

@@ -2,6 +2,12 @@ import { useState, useEffect } from 'react'
 import type { MoonPhase, MilkyWayNight } from '../../types'
 import { getMoonDataForMonth, getNextFullMoon } from '../../lib/moon-api'
 import { getMilkyWayForMonth } from '../../lib/milkyway'
+import {
+  isGitHubConfigured,
+  savePinnedDatesToRepo,
+} from '../../lib/github-api'
+import type { PinnedDateData } from '../../lib/github-api'
+import pinnedDatesData from '../../data/pinned-dates.json'
 
 interface AstroCalendarProps {
   lat: number
@@ -11,14 +17,6 @@ interface AstroCalendarProps {
 interface DayData {
   moon: MoonPhase
   mw: MilkyWayNight
-}
-
-interface PinnedDate {
-  date: string
-  label: string
-  mwScore: number
-  moonPhase: string
-  moonIllum: number
 }
 
 function mwScoreColor(score: number): string {
@@ -49,18 +47,9 @@ const moonInterferenceColor: Record<string, string> = {
 
 const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
 
-function loadPinnedDates(): PinnedDate[] {
-  try {
-    return JSON.parse(localStorage.getItem('ace-stellar-pinned-dates') || '[]')
-  } catch { return [] }
-}
-
-function savePinnedDates(pins: PinnedDate[]) {
-  localStorage.setItem('ace-stellar-pinned-dates', JSON.stringify(pins))
-}
-
 export function AstroCalendar({ lat, lng }: AstroCalendarProps) {
   const now = new Date()
+  const todayStr = now.toISOString().split('T')[0]
   const [year, setYear] = useState(now.getFullYear())
   const [month, setMonth] = useState(now.getMonth())
   const [days, setDays] = useState<DayData[]>([])
@@ -68,13 +57,16 @@ export function AstroCalendar({ lat, lng }: AstroCalendarProps) {
   const [selectedIdx, setSelectedIdx] = useState<number | null>(null)
   const [nextFull, setNextFull] = useState<{ date: Date; daysUntil: number } | null>(null)
   const [showLegend, setShowLegend] = useState(false)
-  const [pinnedDates, setPinnedDates] = useState<PinnedDate[]>(loadPinnedDates)
+  const [pinnedDates, setPinnedDates] = useState<PinnedDateData[]>(pinnedDatesData as PinnedDateData[])
+  const [showPastPins, setShowPastPins] = useState(false)
 
   const maxDate = new Date(now.getFullYear(), now.getMonth() + 6, 1)
   const canGoNext = new Date(year, month + 1, 1) < maxDate
   const canGoPrev = year > now.getFullYear() || month > now.getMonth()
 
   const pinnedSet = new Set(pinnedDates.map((p) => p.date))
+  const upcomingPins = pinnedDates.filter((p) => p.date >= todayStr).sort((a, b) => a.date.localeCompare(b.date))
+  const pastPins = pinnedDates.filter((p) => p.date < todayStr).sort((a, b) => b.date.localeCompare(a.date))
 
   useEffect(() => {
     setNextFull(getNextFullMoon())
@@ -107,82 +99,100 @@ export function AstroCalendar({ lat, lng }: AstroCalendarProps) {
     else setMonth(month + 1)
   }
 
+  async function persistPins(updated: PinnedDateData[]) {
+    setPinnedDates(updated)
+    if (isGitHubConfigured()) {
+      try {
+        await savePinnedDatesToRepo(updated)
+      } catch { /* silent — UI already updated */ }
+    }
+  }
+
   function togglePin(day: DayData) {
     const date = day.moon.date
     if (pinnedSet.has(date)) {
-      const updated = pinnedDates.filter((p) => p.date !== date)
-      setPinnedDates(updated)
-      savePinnedDates(updated)
+      persistPins(pinnedDates.filter((p) => p.date !== date))
     } else {
-      const pin: PinnedDate = {
+      const pin: PinnedDateData = {
         date,
         label: new Date(date + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }),
         mwScore: day.mw.score,
         moonPhase: day.moon.phase.split(' ')[0],
         moonIllum: day.moon.illumination,
       }
-      const updated = [...pinnedDates, pin].sort((a, b) => a.date.localeCompare(b.date))
-      setPinnedDates(updated)
-      savePinnedDates(updated)
+      persistPins([...pinnedDates, pin].sort((a, b) => a.date.localeCompare(b.date)))
     }
   }
 
   function removePin(date: string) {
-    const updated = pinnedDates.filter((p) => p.date !== date)
-    setPinnedDates(updated)
-    savePinnedDates(updated)
+    persistPins(pinnedDates.filter((p) => p.date !== date))
   }
 
   function goToDate(date: string) {
     const d = new Date(date + 'T12:00:00')
     setYear(d.getFullYear())
     setMonth(d.getMonth())
-    // Select the day after render
-    setTimeout(() => {
-      setSelectedIdx(d.getDate() - 1)
-    }, 100)
+    setTimeout(() => setSelectedIdx(d.getDate() - 1), 100)
+  }
+
+  function renderPinCard(pin: PinnedDateData, isPast: boolean) {
+    const daysUntil = Math.ceil((new Date(pin.date + 'T12:00:00').getTime() - now.getTime()) / 86400000)
+    return (
+      <div
+        key={pin.date}
+        className={`shrink-0 bg-bg-primary/50 border border-border rounded-lg px-3 py-2 flex items-center gap-3 cursor-pointer hover:border-accent/30 transition-colors ${isPast ? 'opacity-60' : ''}`}
+        onClick={() => goToDate(pin.date)}
+      >
+        <span className="text-lg">{pin.moonPhase}</span>
+        <div>
+          <p className="text-xs text-text-primary font-medium">{pin.label}</p>
+          <div className="flex items-center gap-2">
+            <span className={`text-[10px] font-bold tabular-nums ${mwScoreColor(pin.mwScore)}`}>MW {pin.mwScore}</span>
+            <span className="text-[9px] text-text-muted">{pin.moonIllum}% illum</span>
+            {!isPast && <span className="text-[9px] text-accent">{daysUntil}d</span>}
+            {isPast && <span className="text-[9px] text-text-muted">past</span>}
+          </div>
+        </div>
+        <button
+          onClick={(e) => { e.stopPropagation(); removePin(pin.date) }}
+          className="text-text-muted hover:text-astro-red text-xs ml-1"
+          title="Remove"
+        >
+          ✕
+        </button>
+      </div>
+    )
   }
 
   const selected = selectedIdx !== null ? days[selectedIdx] : null
 
   return (
     <div className="bg-bg-surface/50 border border-border rounded-xl p-6">
-      {/* Pinned dates strip */}
-      {pinnedDates.length > 0 && (
+      {/* Pinned dates — Upcoming */}
+      {upcomingPins.length > 0 && (
         <div className="mb-4">
-          <div className="flex items-center gap-2 mb-2">
-            <span className="text-[10px] text-text-muted uppercase tracking-widest">Pinned Dates</span>
-          </div>
+          <span className="text-[10px] text-text-muted uppercase tracking-widest mb-2 block">Planned Shoots</span>
           <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-thin">
-            {pinnedDates.map((pin) => {
-              const daysUntil = Math.ceil((new Date(pin.date + 'T12:00:00').getTime() - now.getTime()) / 86400000)
-              const isPast = daysUntil < 0
-              return (
-                <div
-                  key={pin.date}
-                  className={`shrink-0 bg-bg-primary/50 border border-border rounded-lg px-3 py-2 flex items-center gap-3 cursor-pointer hover:border-accent/30 transition-colors ${isPast ? 'opacity-50' : ''}`}
-                  onClick={() => goToDate(pin.date)}
-                >
-                  <span className="text-lg">{pin.moonPhase}</span>
-                  <div>
-                    <p className="text-xs text-text-primary font-medium">{pin.label}</p>
-                    <div className="flex items-center gap-2">
-                      <span className={`text-[10px] font-bold tabular-nums ${mwScoreColor(pin.mwScore)}`}>MW {pin.mwScore}</span>
-                      <span className="text-[9px] text-text-muted">{pin.moonIllum}% illum</span>
-                      {!isPast && <span className="text-[9px] text-accent">{daysUntil}d</span>}
-                    </div>
-                  </div>
-                  <button
-                    onClick={(e) => { e.stopPropagation(); removePin(pin.date) }}
-                    className="text-text-muted hover:text-astro-red text-xs ml-1"
-                    title="Unpin"
-                  >
-                    ✕
-                  </button>
-                </div>
-              )
-            })}
+            {upcomingPins.map((pin) => renderPinCard(pin, false))}
           </div>
+        </div>
+      )}
+
+      {/* Pinned dates — Past (collapsible) */}
+      {pastPins.length > 0 && (
+        <div className="mb-4">
+          <button
+            onClick={() => setShowPastPins(!showPastPins)}
+            className="text-[10px] text-text-muted uppercase tracking-widest mb-2 flex items-center gap-1 hover:text-text-primary transition-colors"
+          >
+            <span>{showPastPins ? '▾' : '▸'}</span>
+            Past Planned Shoots ({pastPins.length})
+          </button>
+          {showPastPins && (
+            <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-thin">
+              {pastPins.map((pin) => renderPinCard(pin, true))}
+            </div>
+          )}
         </div>
       )}
 
@@ -228,7 +238,7 @@ export function AstroCalendar({ lat, lng }: AstroCalendarProps) {
             <span><span className="text-astro-red font-medium">0-39</span> Poor</span>
           </div>
           <div className="pt-1 border-t border-border">
-            Click a day to see details. Click the pin icon to save dates for quick reference.
+            Click a day to see details. Use the 📌 button to save planned shoot dates.
           </div>
         </div>
       )}
@@ -316,7 +326,6 @@ export function AstroCalendar({ lat, lng }: AstroCalendarProps) {
                         ? 'border-astro-yellow/40 text-astro-yellow bg-astro-yellow/10'
                         : 'border-border text-text-muted hover:text-astro-yellow hover:border-astro-yellow/40'
                     }`}
-                    title={pinnedSet.has(selected.moon.date) ? 'Unpin this date' : 'Pin this date'}
                   >
                     {pinnedSet.has(selected.moon.date) ? '📌 Pinned' : '📌 Pin'}
                   </button>
@@ -325,7 +334,6 @@ export function AstroCalendar({ lat, lng }: AstroCalendarProps) {
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {/* Moon details */}
                 <div className="space-y-2">
                   <h4 className="text-xs tracking-widest uppercase text-text-muted">Moon</h4>
                   <div className="flex items-center gap-2 mb-1">
@@ -347,7 +355,6 @@ export function AstroCalendar({ lat, lng }: AstroCalendarProps) {
                   </div>
                 </div>
 
-                {/* Milky Way details */}
                 <div className="space-y-2">
                   <h4 className="text-xs tracking-widest uppercase text-text-muted">Milky Way</h4>
                   <div className="flex items-center gap-3 mb-1">
