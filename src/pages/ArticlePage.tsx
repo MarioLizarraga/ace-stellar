@@ -241,6 +241,15 @@ export function ArticlePage() {
             <span>&middot;</span>
             <span>{formattedDate}</span>
           </div>
+
+          {article.slug === 'best-us-astro-locations' && (
+            <Link
+              to="/light-map"
+              className="mt-4 inline-flex items-center gap-2 bg-astro-green/10 border border-astro-green/30 text-astro-green rounded-lg px-4 py-2 text-sm hover:bg-astro-green/20 transition-colors"
+            >
+              <span>★</span> View all locations on the Light Map
+            </Link>
+          )}
         </motion.div>
 
         {/* Body */}
