@@ -1,6 +1,5 @@
 import { useState, useRef } from 'react'
 import { PageTransition } from '../components/layout/PageTransition'
-import { LocationSelector } from '../components/dashboard/LocationSelector'
 import { AstroCalendar } from '../components/dashboard/AstroCalendar'
 import { WeatherStation } from '../components/dashboard/WeatherStation'
 import { CitySearch } from '../components/dashboard/CitySearch'
@@ -23,8 +22,6 @@ export function DashboardPage() {
   const [locations, setLocations] = useState(allLocations)
   const dragItem = useRef<number | null>(null)
   const dragOverItem = useRef<number | null>(null)
-  const [selectedLocationId, setSelectedLocationId] = useState(locations[0]?.id || '')
-  const selectedLocation = locations.find((l) => l.id === selectedLocationId) || locations[0]
   const [showAddForm, setShowAddForm] = useState(false)
   const [newName, setNewName] = useState('')
   const [newLat, setNewLat] = useState('')
@@ -128,11 +125,6 @@ export function DashboardPage() {
             PL<span className="font-bold">AN</span>
           </h1>
           <div className="flex items-center gap-4">
-            <LocationSelector
-              locations={locations}
-              selectedId={selectedLocationId}
-              onChange={setSelectedLocationId}
-            />
             {/* Only show GitHub connect UI when there's no baked-in token */}
             {!baked && (
               ghConfigured ? (
@@ -194,7 +186,7 @@ export function DashboardPage() {
         )}
 
         <div className="mb-6">
-          <AstroCalendar lat={selectedLocation.lat} lng={selectedLocation.lng} />
+          <AstroCalendar lat={locations[0]?.lat ?? 29.25} lng={locations[0]?.lng ?? -103.25} />
         </div>
 
         <div className="space-y-4">
