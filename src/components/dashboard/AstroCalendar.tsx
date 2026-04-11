@@ -2,7 +2,8 @@ import { useState, useEffect } from 'react'
 import type { MoonPhase, MilkyWayNight } from '../../types'
 import { getMoonDataForMonth, getNextFullMoon } from '../../lib/moon-api'
 import { getMilkyWayForMonth } from '../../lib/milkyway'
-// BORTLE_INFO removed — light pollution now shown in WeatherStation
+import { getDayAstroInfo } from '../../lib/sun-planets'
+import type { DayAstroInfo } from '../../lib/sun-planets'
 import {
   isGitHubConfigured,
   savePinnedDatesToRepo,
@@ -61,6 +62,7 @@ export function AstroCalendar({ lat, lng }: AstroCalendarProps) {
   const [showLegend, setShowLegend] = useState(false)
   const [pinnedDates, setPinnedDates] = useState<PinnedDateData[]>(pinnedDatesData as PinnedDateData[])
   const [showPastPins, setShowPastPins] = useState(false)
+  const [dayAstroInfo, setDayAstroInfo] = useState<DayAstroInfo | null>(null)
 
   const maxDate = new Date(now.getFullYear(), now.getMonth() + 6, 1)
   const canGoNext = new Date(year, month + 1, 1) < maxDate
@@ -168,6 +170,20 @@ export function AstroCalendar({ lat, lng }: AstroCalendarProps) {
   }
 
   const selected = selectedIdx !== null ? days[selectedIdx] : null
+
+  // Fetch sun/twilight/planet data when a day is selected
+  useEffect(() => {
+    if (selected) {
+      setDayAstroInfo(null)
+      const timer = setTimeout(() => {
+        const date = new Date(selected.moon.date + 'T12:00:00')
+        setDayAstroInfo(getDayAstroInfo(date, lat, lng))
+      }, 30)
+      return () => clearTimeout(timer)
+    } else {
+      setDayAstroInfo(null)
+    }
+  }, [selectedIdx, selected?.moon.date, lat, lng])
 
   return (
     <div className="bg-bg-surface/50 border border-border rounded-xl p-6">
@@ -317,7 +333,8 @@ export function AstroCalendar({ lat, lng }: AstroCalendarProps) {
 
           {/* Selected day detail panel */}
           {selected && (
-            <div className="mt-3 bg-bg-primary/50 border border-border rounded-lg p-4 space-y-3">
+            <div className="mt-3 bg-bg-primary/50 border border-border rounded-lg p-4 space-y-4">
+              {/* Header + Pin */}
               <div className="flex items-center justify-between">
                 <h3 className="text-sm font-medium text-text-primary">
                   {new Date(selected.moon.date + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}
@@ -337,7 +354,8 @@ export function AstroCalendar({ lat, lng }: AstroCalendarProps) {
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                {/* Moon */}
                 <div className="space-y-2">
                   <h4 className="text-xs tracking-widest uppercase text-text-muted">Moon</h4>
                   <div className="flex items-center gap-2 mb-1">
@@ -347,7 +365,7 @@ export function AstroCalendar({ lat, lng }: AstroCalendarProps) {
                       <p className="text-xs text-text-muted">{selected.moon.illumination}% illuminated</p>
                     </div>
                   </div>
-                  <div className="grid grid-cols-2 gap-2 text-xs">
+                  <div className="space-y-1 text-xs">
                     <div className="flex justify-between">
                       <span className="text-text-muted">Moonrise</span>
                       <span className="text-text-primary">{selected.moon.moonrise || '—'}</span>
@@ -359,24 +377,24 @@ export function AstroCalendar({ lat, lng }: AstroCalendarProps) {
                   </div>
                 </div>
 
+                {/* Milky Way */}
                 <div className="space-y-2">
                   <h4 className="text-xs tracking-widest uppercase text-text-muted">Milky Way</h4>
-                  <div className="flex items-center gap-3 mb-1">
-                    <div className={`w-10 h-10 rounded-lg ${
+                  <div className="flex items-center gap-2 mb-1">
+                    <div className={`w-9 h-9 rounded-lg ${
                       selected.mw.score >= 70 ? 'bg-astro-green/20' : selected.mw.score >= 40 ? 'bg-astro-yellow/20' : 'bg-astro-red/20'
                     } flex items-center justify-center`}>
-                      <span className={`text-lg font-bold tabular-nums ${mwScoreColor(selected.mw.score)}`}>{selected.mw.score}</span>
+                      <span className={`text-base font-bold tabular-nums ${mwScoreColor(selected.mw.score)}`}>{selected.mw.score}</span>
                     </div>
                     <div>
-                      <p className="text-sm text-text-primary font-medium">
-                        {selected.mw.score >= 70 ? 'Excellent night' : selected.mw.score >= 40 ? 'Fair night' : 'Poor night'}
+                      <p className="text-xs text-text-primary font-medium">
+                        {selected.mw.score >= 70 ? 'Excellent' : selected.mw.score >= 40 ? 'Fair' : 'Poor'}
                       </p>
-                      <p className="text-xs text-text-muted">for milky way photography</p>
                     </div>
                   </div>
                   <div className="space-y-1 text-xs">
                     <div className="flex justify-between">
-                      <span className="text-text-muted">Core visible</span>
+                      <span className="text-text-muted">Core</span>
                       <span className="text-text-primary">
                         {selected.mw.coreVisibleStart && selected.mw.coreVisibleEnd
                           ? `${selected.mw.coreVisibleStart} – ${selected.mw.coreVisibleEnd}`
@@ -384,12 +402,78 @@ export function AstroCalendar({ lat, lng }: AstroCalendarProps) {
                       </span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-text-muted">Moon interference</span>
+                      <span className="text-text-muted">Moon</span>
                       <span className={moonInterferenceColor[selected.mw.moonInterference]}>
                         {moonInterferenceLabel[selected.mw.moonInterference]}
                       </span>
                     </div>
                   </div>
+                </div>
+
+                {/* Sun & Twilight */}
+                <div className="space-y-2">
+                  <h4 className="text-xs tracking-widest uppercase text-text-muted">Sun & Twilight</h4>
+                  {dayAstroInfo ? (
+                    <div className="space-y-1 text-xs">
+                      <div className="flex justify-between">
+                        <span className="text-text-muted">Sunrise</span>
+                        <span className="text-text-primary">{dayAstroInfo.sun.sunrise || '—'}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-text-muted">Sunset</span>
+                        <span className="text-text-primary">{dayAstroInfo.sun.sunset || '—'}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-astro-yellow">Golden hr</span>
+                        <span className="text-text-primary">{dayAstroInfo.sun.goldenHourStart || '—'}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-accent">Blue hr</span>
+                        <span className="text-text-primary">{dayAstroInfo.sun.blueHourStart || '—'}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-text-muted">Dark starts</span>
+                        <span className="text-text-primary">{dayAstroInfo.sun.astroTwilightEnd || '—'}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-text-muted">Dark ends</span>
+                        <span className="text-text-primary">{dayAstroInfo.sun.astroTwilightStart || '—'}</span>
+                      </div>
+                      <div className="flex justify-between pt-1 border-t border-border mt-1">
+                        <span className="text-astro-green font-medium">Dark hours</span>
+                        <span className="text-astro-green font-bold tabular-nums">{dayAstroInfo.sun.darknessHours}h</span>
+                      </div>
+                    </div>
+                  ) : (
+                    <p className="text-xs text-text-muted animate-pulse">Calculating...</p>
+                  )}
+                </div>
+
+                {/* Planets */}
+                <div className="space-y-2">
+                  <h4 className="text-xs tracking-widest uppercase text-text-muted">Planets Tonight</h4>
+                  {dayAstroInfo ? (
+                    <div className="space-y-2">
+                      {dayAstroInfo.planets.map((p) => (
+                        <div key={p.name} className={`flex items-center justify-between text-xs ${p.isVisible ? '' : 'opacity-40'}`}>
+                          <div className="flex items-center gap-2">
+                            <span className={`w-2 h-2 rounded-full ${p.isVisible ? 'bg-astro-green' : 'bg-text-muted/30'}`} />
+                            <span className="text-text-primary font-medium">{p.name}</span>
+                          </div>
+                          <div className="text-right">
+                            {p.isVisible ? (
+                              <span className="text-text-muted">{p.altitude}° max</span>
+                            ) : (
+                              <span className="text-text-muted">not visible</span>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                      <p className="text-[9px] text-text-muted mt-1">Green = above horizon during nighttime</p>
+                    </div>
+                  ) : (
+                    <p className="text-xs text-text-muted animate-pulse">Calculating...</p>
+                  )}
                 </div>
               </div>
             </div>
