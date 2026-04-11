@@ -40,7 +40,7 @@ export function ArticleCard({ slug, title, excerpt, category, date, readTime, fe
           <span className={`text-[10px] px-2 py-0.5 rounded-full uppercase tracking-wider font-medium ${colorClass}`}>
             {category}
           </span>
-          <span className="text-[10px] text-text-muted">{readTime} min read</span>
+          <span className="text-[10px] text-[#8b95a5]">{readTime} min read</span>
           {featured && (
             <span className="text-[10px] px-2 py-0.5 rounded-full bg-astro-yellow/10 text-astro-yellow uppercase tracking-wider font-medium">
               Featured
@@ -52,11 +52,11 @@ export function ArticleCard({ slug, title, excerpt, category, date, readTime, fe
           {title}
         </h3>
 
-        <p className="text-text-muted text-sm leading-relaxed mb-3">
+        <p className="text-[#a8b2c1] text-sm leading-relaxed mb-3">
           {excerpt}
         </p>
 
-        <p className="text-[11px] text-text-muted">
+        <p className="text-[11px] text-[#8b95a5]">
           {new Date(date + 'T12:00:00').toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
         </p>
       </Link>

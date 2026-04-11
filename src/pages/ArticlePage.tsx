@@ -37,7 +37,7 @@ function renderMarkdown(body: string) {
     const lines = trimmed.split('\n')
     if (lines.every((l) => l.trim().startsWith('- ') || l.trim().startsWith('* '))) {
       return (
-        <ul key={i} className="list-disc list-inside space-y-1.5 mb-4 text-text-muted text-sm leading-relaxed pl-2">
+        <ul key={i} className="list-disc list-inside space-y-1.5 mb-4 text-[#a8b2c1] text-sm leading-relaxed pl-2">
           {lines.map((line, j) => {
             const content = line.trim().replace(/^[-*]\s+/, '')
             return <li key={j}>{renderInline(content)}</li>
@@ -101,13 +101,13 @@ function renderMarkdown(body: string) {
             if (t.startsWith('- ') || t.startsWith('* ')) {
               const content = t.replace(/^[-*]\s+/, '')
               return (
-                <ul key={j} className="list-disc list-inside text-text-muted text-sm leading-relaxed pl-2">
+                <ul key={j} className="list-disc list-inside text-[#a8b2c1] text-sm leading-relaxed pl-2">
                   <li>{renderInline(content)}</li>
                 </ul>
               )
             }
             return (
-              <p key={j} className="text-text-muted text-sm leading-relaxed mb-1">
+              <p key={j} className="text-[#a8b2c1] text-sm leading-relaxed mb-1">
                 {renderInline(t)}
               </p>
             )
@@ -118,7 +118,7 @@ function renderMarkdown(body: string) {
 
     // Regular paragraph (may contain \n line breaks)
     return (
-      <p key={i} className="text-text-muted text-sm leading-relaxed mb-4">
+      <p key={i} className="text-[#a8b2c1] text-sm leading-relaxed mb-4">
         {lines.map((line, j) => (
           <span key={j}>
             {j > 0 && <br />}
@@ -198,7 +198,7 @@ export function ArticlePage() {
         >
           <Link
             to="/learn"
-            className="text-text-muted text-sm hover:text-accent transition-colors inline-flex items-center gap-1"
+            className="text-[#8b95a5] text-sm hover:text-accent transition-colors inline-flex items-center gap-1"
           >
             <span>&larr;</span> Back to Learn
           </Link>
@@ -216,14 +216,14 @@ export function ArticlePage() {
             >
               {article.category}
             </span>
-            <span className="text-[11px] text-text-muted">{article.readTime} min read</span>
+            <span className="text-[11px] text-[#8b95a5]">{article.readTime} min read</span>
           </div>
 
           <h1 className="text-3xl sm:text-4xl font-bold text-text-primary leading-tight mb-4">
             {article.title}
           </h1>
 
-          <div className="flex items-center gap-3 text-text-muted text-xs">
+          <div className="flex items-center gap-3 text-[#8b95a5] text-xs">
             <span>By {article.author}</span>
             <span>&middot;</span>
             <span>{formattedDate}</span>
@@ -264,7 +264,7 @@ export function ArticlePage() {
               to={`/learn/${prevArticle.slug}`}
               className="group bg-bg-surface/30 border border-border rounded-xl p-4 hover:border-accent/30 transition-all"
             >
-              <p className="text-[10px] text-text-muted uppercase tracking-wider mb-1">
+              <p className="text-[10px] text-[#8b95a5] uppercase tracking-wider mb-1">
                 &larr; Previous Article
               </p>
               <p className="text-sm text-text-primary group-hover:text-accent transition-colors">
@@ -279,7 +279,7 @@ export function ArticlePage() {
               to={`/learn/${nextArticle.slug}`}
               className="group bg-bg-surface/30 border border-border rounded-xl p-4 hover:border-accent/30 transition-all text-right"
             >
-              <p className="text-[10px] text-text-muted uppercase tracking-wider mb-1">
+              <p className="text-[10px] text-[#8b95a5] uppercase tracking-wider mb-1">
                 Next Article &rarr;
               </p>
               <p className="text-sm text-text-primary group-hover:text-accent transition-colors">
