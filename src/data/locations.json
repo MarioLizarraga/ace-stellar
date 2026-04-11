@@ -1,16 +1,16 @@
 [
   {
-    "id": "redmond,-washington,-united-states",
-    "name": "Redmond, Washington, United States",
-    "lat": 47.67399,
-    "lng": -122.12151,
-    "bortle": 5
-  },
-  {
     "id": "kachess-resort,-washington,-united-states",
     "name": "Kachess Resort, Washington, United States",
     "lat": 47.33261,
     "lng": -121.25398,
+    "bortle": 5
+  },
+  {
+    "id": "redmond,-washington,-united-states",
+    "name": "Redmond, Washington, United States",
+    "lat": 47.67399,
+    "lng": -122.12151,
     "bortle": 5
   }
 ]
