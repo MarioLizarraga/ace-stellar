@@ -3,7 +3,8 @@ import { MapContainer, TileLayer, Marker, Popup, useMapEvents, useMap } from 're
 import L from 'leaflet'
 import { PageTransition } from '../components/layout/PageTransition'
 import { CitySearch } from '../components/dashboard/CitySearch'
-import { BORTLE_INFO } from '../lib/light-pollution'
+import { BORTLE_INFO, fetchLightPollution } from '../lib/light-pollution'
+import type { LightPollutionResult } from '../lib/light-pollution'
 import {
   isGitHubConfigured,
   addLocationToRepo,
@@ -69,90 +70,7 @@ interface ClickedPoint {
   lng: number
 }
 
-interface LightInfo {
-  brightness: number
-  bortle: number
-  sqm: number
-  category: string
-}
-
-/**
- * Sample the pixel brightness from the overlay tile at a given lat/lng.
- * Fetches the tile, draws it to a canvas, and reads the pixel color.
- */
-async function sampleTileBrightness(lat: number, lng: number, tileUrl: string): Promise<LightInfo | null> {
-  try {
-    const zoom = 8
-    const n = Math.pow(2, zoom)
-    const x = Math.floor(((lng + 180) / 360) * n)
-    const latRad = (lat * Math.PI) / 180
-    const y = Math.floor((1 - Math.log(Math.tan(latRad) + 1 / Math.cos(latRad)) / Math.PI) / 2 * n)
-
-    const url = tileUrl
-      .replace('{z}', zoom.toString())
-      .replace('{x}', x.toString())
-      .replace('{y}', y.toString())
-
-    const img = new Image()
-    img.crossOrigin = 'anonymous'
-
-    await new Promise<void>((resolve, reject) => {
-      img.onload = () => resolve()
-      img.onerror = () => reject(new Error('Failed to load tile'))
-      img.src = url
-    })
-
-    const canvas = document.createElement('canvas')
-    canvas.width = 256
-    canvas.height = 256
-    const ctx = canvas.getContext('2d')
-    if (!ctx) return null
-
-    ctx.drawImage(img, 0, 0)
-
-    // Calculate pixel position within the tile
-    const tileXFrac = ((lng + 180) / 360) * n - x
-    const tileYFrac = (1 - Math.log(Math.tan(latRad) + 1 / Math.cos(latRad)) / Math.PI) / 2 * n - y
-    const px = Math.floor(tileXFrac * 256)
-    const py = Math.floor(tileYFrac * 256)
-
-    const pixel = ctx.getImageData(Math.min(px, 255), Math.min(py, 255), 1, 1).data
-    const r = pixel[0], g = pixel[1], b = pixel[2]
-
-    // Calculate perceived brightness (0-255)
-    const brightness = Math.round(0.299 * r + 0.587 * g + 0.114 * b)
-
-    // Map brightness to Bortle (approximate but effective)
-    // 0-2: Bortle 1, 3-5: Bortle 2, 6-12: Bortle 3, 13-25: Bortle 4
-    // 26-50: Bortle 5, 51-80: Bortle 6, 81-120: Bortle 7, 121-180: Bortle 8, 181+: Bortle 9
-    let bortle: number
-    if (brightness <= 2) bortle = 1
-    else if (brightness <= 5) bortle = 2
-    else if (brightness <= 12) bortle = 3
-    else if (brightness <= 25) bortle = 4
-    else if (brightness <= 50) bortle = 5
-    else if (brightness <= 80) bortle = 6
-    else if (brightness <= 120) bortle = 7
-    else if (brightness <= 180) bortle = 8
-    else bortle = 9
-
-    // Approximate SQM from Bortle
-    const sqmMap: Record<number, number> = {
-      1: 22.0, 2: 21.9, 3: 21.7, 4: 20.5, 5: 19.5,
-      6: 18.9, 7: 18.4, 8: 17.8, 9: 17.0,
-    }
-    const sqm = sqmMap[bortle] || 19.5
-
-    return {
-      brightness,
-      bortle,
-      sqm,
-      category: BORTLE_INFO[bortle]?.label || 'Unknown',
-    }
-  } catch {
-    return null
-  }
-}
+// Light pollution data is fetched from lightpollutionmap.info's WMS GetFeatureInfo
 
 function MapClickHandler({ onClick }: { onClick: (coords: ClickedPoint) => void }) {
   useMapEvents({
@@ -177,7 +95,7 @@ export function LightMapPage() {
   const [activeLayer, setActiveLayer] = useState('city_lights')
   const [opacity, setOpacity] = useState(0.7)
   const [clickedPoint, setClickedPoint] = useState<ClickedPoint | null>(null)
-  const [lightInfo, setLightInfo] = useState<LightInfo | null>(null)
+  const [lightInfo, setLightInfo] = useState<LightPollutionResult | null>(null)
   const [lightLoading, setLightLoading] = useState(false)
   const [saveName, setSaveName] = useState('')
   const [saveBortle, setSaveBortle] = useState('5')
@@ -193,13 +111,11 @@ export function LightMapPage() {
     setLightInfo(null)
     setLightLoading(true)
 
-    const info = await sampleTileBrightness(coords.lat, coords.lng, currentOverlay.url)
+    const info = await fetchLightPollution(coords.lat, coords.lng)
     setLightInfo(info)
-    if (info) {
-      setSaveBortle(info.bortle.toString())
-    }
+    setSaveBortle(info.bortle.toString())
     setLightLoading(false)
-  }, [currentOverlay.url])
+  }, [])
 
   async function handleSaveLocation() {
     if (!clickedPoint || !saveName.trim()) return
@@ -241,12 +157,11 @@ export function LightMapPage() {
     setSaveName(displayName)
     setClickedPoint({ lat: city.latitude, lng: city.longitude })
 
-    // Sample the tile at the city
     setLightInfo(null)
     setLightLoading(true)
-    sampleTileBrightness(city.latitude, city.longitude, currentOverlay.url).then((info) => {
+    fetchLightPollution(city.latitude, city.longitude).then((info) => {
       setLightInfo(info)
-      if (info) setSaveBortle(info.bortle.toString())
+      setSaveBortle(info.bortle.toString())
       setLightLoading(false)
     })
   }
@@ -336,26 +251,32 @@ export function LightMapPage() {
                       <p style={{ fontSize: '12px', color: '#888', marginBottom: '8px' }}>Analyzing light pollution...</p>
                     )}
                     {lightInfo && (
-                      <div style={{ background: '#f5f5f5', borderRadius: '6px', padding: '8px', marginBottom: '10px' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
+                      <div style={{ background: '#f5f5f5', borderRadius: '6px', padding: '10px', marginBottom: '10px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
                           <div style={{
-                            width: '28px', height: '28px', borderRadius: '50%', border: '2px solid #ddd',
+                            width: '32px', height: '32px', borderRadius: '50%', border: '2px solid #ddd',
                             display: 'flex', alignItems: 'center', justifyContent: 'center',
-                            fontSize: '12px', fontWeight: 700, color: '#fff',
+                            fontSize: '14px', fontWeight: 700, color: '#fff',
                             backgroundColor: BORTLE_INFO[lightInfo.bortle]?.color || '#333',
                           }}>
                             {lightInfo.bortle}
                           </div>
                           <div>
-                            <p style={{ fontWeight: 600, fontSize: '13px', margin: 0 }}>Bortle {lightInfo.bortle}</p>
-                            <p style={{ fontSize: '11px', color: '#666', margin: 0 }}>{lightInfo.category}</p>
+                            <p style={{ fontWeight: 600, fontSize: '14px', margin: 0 }}>Bortle {lightInfo.bortle}</p>
+                            <p style={{ fontSize: '12px', color: '#666', margin: 0 }}>{BORTLE_INFO[lightInfo.bortle]?.label}</p>
                           </div>
+                          {lightInfo.source === 'world-atlas' && (
+                            <span style={{ fontSize: '9px', color: '#4a6fa5', marginLeft: 'auto', background: '#e8f0fe', padding: '1px 6px', borderRadius: '8px' }}>live</span>
+                          )}
                         </div>
-                        <div style={{ display: 'flex', gap: '12px', fontSize: '11px', color: '#555' }}>
-                          <span>SQM ~{lightInfo.sqm} mag/arcsec²</span>
-                          <span>Brightness: {lightInfo.brightness}/255</span>
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '4px', fontSize: '11px', color: '#555', marginBottom: '4px' }}>
+                          <span>SQM: <strong>{lightInfo.sqm}</strong> mag/arcsec²</span>
+                          <span>Brightness: <strong>{lightInfo.artificialBrightness}</strong> mcd/m²</span>
+                          {lightInfo.viirsRadiance !== null && (
+                            <span>VIIRS: <strong>{lightInfo.viirsRadiance}</strong>/255</span>
+                          )}
                         </div>
-                        <p style={{ fontSize: '10px', color: '#888', marginTop: '4px', marginBottom: 0 }}>
+                        <p style={{ fontSize: '10px', color: '#888', marginTop: '4px', marginBottom: 0, lineHeight: 1.4 }}>
                           {BORTLE_INFO[lightInfo.bortle]?.description}
                         </p>
                       </div>
