@@ -29,10 +29,11 @@ export function ArticleCard({ slug, title, excerpt, category, date, readTime, fe
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: index * 0.05, duration: 0.4 }}
+      className="h-full"
     >
       <Link
         to={`/learn/${slug}`}
-        className={`block bg-bg-surface/30 border border-border rounded-xl p-6 hover:border-accent/30 transition-all duration-300 hover:bg-bg-surface/50 ${
+        className={`flex flex-col h-full bg-bg-surface/30 border border-border rounded-xl p-6 hover:border-accent/30 transition-all duration-300 hover:bg-bg-surface/50 ${
           featured ? 'ring-1 ring-accent/20' : ''
         }`}
       >
@@ -52,11 +53,11 @@ export function ArticleCard({ slug, title, excerpt, category, date, readTime, fe
           {title}
         </h3>
 
-        <p className="text-[#a8b2c1] text-sm leading-relaxed mb-3">
+        <p className="text-[#a8b2c1] text-sm leading-relaxed mb-3 flex-1">
           {excerpt}
         </p>
 
-        <p className="text-[11px] text-[#8b95a5]">
+        <p className="text-[11px] text-[#8b95a5] mt-auto">
           {new Date(date + 'T12:00:00').toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
         </p>
       </Link>
