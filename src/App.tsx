@@ -6,6 +6,8 @@ import { HomePage } from './pages/HomePage'
 import { DashboardPage } from './pages/DashboardPage'
 import { GalleryPage } from './pages/GalleryPage'
 import { ExplorePage } from './pages/ExplorePage'
+import { LearnPage } from './pages/LearnPage'
+import { ArticlePage } from './pages/ArticlePage'
 
 function AnimatedRoutes() {
   const location = useLocation()
@@ -14,6 +16,8 @@ function AnimatedRoutes() {
       <Routes location={location} key={location.pathname}>
         <Route path="/" element={<HomePage />} />
         <Route path="/dashboard" element={<DashboardPage />} />
+        <Route path="/learn" element={<LearnPage />} />
+        <Route path="/learn/:slug" element={<ArticlePage />} />
         <Route path="/gallery" element={<GalleryPage />} />
         <Route path="/explore" element={<ExplorePage />} />
       </Routes>

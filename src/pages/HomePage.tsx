@@ -2,10 +2,15 @@ import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { PageTransition } from '../components/layout/PageTransition'
 import photosData from '../data/photos.json'
+import { articles } from '../data/articles'
 import type { Photo } from '../types'
 
 const photos = photosData as Photo[]
 const featuredPhotos = photos.filter((p) => p.featured).slice(0, 6)
+
+const latestArticles = [...articles]
+  .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+  .slice(0, 3)
 
 const stagger = {
   animate: { transition: { staggerChildren: 0.1 } },
@@ -142,6 +147,49 @@ export function HomePage() {
                   </Link>
                 )
               })}
+            </div>
+          </motion.div>
+        </section>
+
+        {/* Latest articles */}
+        <section className="max-w-5xl mx-auto px-4 py-16">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+          >
+            <h2 className="text-lg font-light tracking-widest text-center mb-8">
+              LATEST <span className="font-bold">ARTICLES</span>
+            </h2>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {latestArticles.map((article) => (
+                <Link
+                  key={article.id}
+                  to={`/learn/${article.slug}`}
+                  className="group bg-bg-surface/30 border border-border rounded-xl p-5 hover:border-accent/30 transition-all duration-300 hover:bg-bg-surface/50"
+                >
+                  <div className="flex items-center gap-2 mb-3">
+                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-accent/20 text-accent uppercase tracking-wider font-medium">
+                      {article.category}
+                    </span>
+                    <span className="text-[10px] text-text-muted">{article.readTime} min</span>
+                  </div>
+                  <h3 className="text-sm font-semibold text-text-primary mb-2 group-hover:text-accent transition-colors">
+                    {article.title}
+                  </h3>
+                  <p className="text-text-muted text-xs leading-relaxed line-clamp-2">
+                    {article.excerpt}
+                  </p>
+                </Link>
+              ))}
+            </div>
+            <div className="text-center mt-6">
+              <Link
+                to="/learn"
+                className="text-accent text-sm hover:underline tracking-wider"
+              >
+                View all articles &rarr;
+              </Link>
             </div>
           </motion.div>
         </section>
