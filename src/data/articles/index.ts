@@ -8,6 +8,7 @@ import focusStars from './how-to-focus-stars.json'
 import planning from './planning-astro-shoot.json'
 import editing from './editing-stacking-basics.json'
 import lightPollution from './light-pollution-dark-skies.json'
+import bestUsLocations from './best-us-astro-locations.json'
 
 export interface Article {
   id: string
@@ -34,4 +35,5 @@ export const articles: Article[] = [
   planning,
   editing,
   lightPollution,
+  bestUsLocations,
 ] as Article[]
