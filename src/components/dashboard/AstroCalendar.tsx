@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react'
 import type { MoonPhase, MilkyWayNight } from '../../types'
 import { getMoonDataForMonth, getNextFullMoon } from '../../lib/moon-api'
 import { getMilkyWayForMonth } from '../../lib/milkyway'
+import { fetchLightPollution, BORTLE_INFO } from '../../lib/light-pollution'
+import type { LightPollutionData } from '../../lib/light-pollution'
 import {
   isGitHubConfigured,
   savePinnedDatesToRepo,
@@ -12,6 +14,7 @@ import pinnedDatesData from '../../data/pinned-dates.json'
 interface AstroCalendarProps {
   lat: number
   lng: number
+  bortle?: number
 }
 
 interface DayData {
@@ -47,7 +50,7 @@ const moonInterferenceColor: Record<string, string> = {
 
 const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
 
-export function AstroCalendar({ lat, lng }: AstroCalendarProps) {
+export function AstroCalendar({ lat, lng, bortle: storedBortle }: AstroCalendarProps) {
   const now = new Date()
   const todayStr = now.toISOString().split('T')[0]
   const [year, setYear] = useState(now.getFullYear())
@@ -59,6 +62,8 @@ export function AstroCalendar({ lat, lng }: AstroCalendarProps) {
   const [showLegend, setShowLegend] = useState(false)
   const [pinnedDates, setPinnedDates] = useState<PinnedDateData[]>(pinnedDatesData as PinnedDateData[])
   const [showPastPins, setShowPastPins] = useState(false)
+  const [lightPollution, setLightPollution] = useState<LightPollutionData | null>(null)
+  const [lpLoading, setLpLoading] = useState(false)
 
   const maxDate = new Date(now.getFullYear(), now.getMonth() + 6, 1)
   const canGoNext = new Date(year, month + 1, 1) < maxDate
@@ -71,6 +76,15 @@ export function AstroCalendar({ lat, lng }: AstroCalendarProps) {
   useEffect(() => {
     setNextFull(getNextFullMoon())
   }, [])
+
+  // Fetch live light pollution data when location changes
+  useEffect(() => {
+    setLpLoading(true)
+    fetchLightPollution(lat, lng).then((data) => {
+      setLightPollution(data)
+      setLpLoading(false)
+    })
+  }, [lat, lng])
 
   useEffect(() => {
     setLoading(true)
@@ -215,6 +229,43 @@ export function AstroCalendar({ lat, lng }: AstroCalendarProps) {
           </button>
         </div>
       </div>
+
+      {/* Light Pollution indicator */}
+      {(() => {
+        const activeBortle = (lightPollution?.source === 'api' && lightPollution.bortle > 0) ? lightPollution.bortle : (storedBortle || 5)
+        const info = BORTLE_INFO[activeBortle]
+        const isLive = lightPollution?.source === 'api' && lightPollution.bortle > 0
+        return (
+          <div className="mb-3 bg-bg-primary/40 border border-border rounded-lg px-4 py-2.5 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div
+                className="w-8 h-8 rounded-full border-2 border-border flex items-center justify-center text-xs font-bold text-text-primary"
+                style={{ backgroundColor: info?.color || '#333' }}
+              >
+                {activeBortle}
+              </div>
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-medium text-text-primary">Bortle {activeBortle}</span>
+                  <span className="text-xs text-text-muted">— {info?.label}</span>
+                  {lpLoading && <span className="text-[9px] text-text-muted animate-pulse">fetching...</span>}
+                  {isLive && <span className="text-[9px] text-astro-green">live</span>}
+                </div>
+                <p className="text-[10px] text-text-muted mt-0.5">{info?.description}</p>
+              </div>
+            </div>
+            {lightPollution?.source === 'api' && lightPollution.sqm > 0 && (
+              <div className="text-right hidden sm:block">
+                <p className="text-xs text-text-primary font-medium tabular-nums">SQM {lightPollution.sqm}</p>
+                <p className="text-[9px] text-text-muted">mag/arcsec²</p>
+                {lightPollution.artificialBrightness !== null && (
+                  <p className="text-[9px] text-text-muted tabular-nums">{lightPollution.artificialBrightness} mcd/m²</p>
+                )}
+              </div>
+            )}
+          </div>
+        )
+      })()}
 
       {/* Legend */}
       {showLegend && (

@@ -191,7 +191,7 @@ export function DashboardPage() {
         )}
 
         <div className="mb-6">
-          <AstroCalendar lat={selectedLocation.lat} lng={selectedLocation.lng} />
+          <AstroCalendar lat={selectedLocation.lat} lng={selectedLocation.lng} bortle={selectedLocation.bortle} />
         </div>
 
         <div className="space-y-4">
