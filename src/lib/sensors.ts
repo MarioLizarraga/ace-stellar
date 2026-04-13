@@ -16,6 +16,7 @@ export const SENSOR_PRESETS: SensorSpec[] = [
   { id: 'sony-a7iv', name: 'Sony A7 IV (FF)', widthMm: 35.9, heightMm: 23.9, widthPx: 7008, heightPx: 4672, cropFactor: 1.0 },
   { id: 'nikon-z6iii', name: 'Nikon Z6 III (FF)', widthMm: 35.9, heightMm: 23.9, widthPx: 6048, heightPx: 4032, cropFactor: 1.0 },
   { id: 'canon-r6ii', name: 'Canon R6 Mark II (FF)', widthMm: 35.9, heightMm: 23.9, widthPx: 6000, heightPx: 4000, cropFactor: 1.0 },
+  { id: 'canon-r8', name: 'Canon EOS R8 (FF)', widthMm: 35.9, heightMm: 23.9, widthPx: 6000, heightPx: 4000, cropFactor: 1.0 },
 
   // APS-C
   { id: 'apsc-canon', name: 'APS-C Canon (1.6x)', widthMm: 22.2, heightMm: 14.8, widthPx: 6000, heightPx: 4000, cropFactor: 1.6 },
