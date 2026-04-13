@@ -13,6 +13,7 @@ import {
 import type { SavedLocation } from '../types'
 import locationsData from '../data/locations.json'
 import { astroLocationsUS } from '../data/astro-locations-us'
+import { astroLocationsInternational } from '../data/astro-locations-international'
 import 'leaflet/dist/leaflet.css'
 
 const savedLocations = locationsData as SavedLocation[]
@@ -38,6 +39,14 @@ const savedIcon = L.icon({
 
 const refIcon = L.divIcon({
   html: `<div style="width:24px;height:24px;background:#4ade80;border:2px solid #166534;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;color:#166534;font-weight:bold;box-shadow:0 2px 6px rgba(0,0,0,0.4);">★</div>`,
+  iconSize: [24, 24],
+  iconAnchor: [12, 12],
+  popupAnchor: [0, -14],
+  className: '',
+})
+
+const intlRefIcon = L.divIcon({
+  html: `<div style="width:24px;height:24px;background:#f97316;border:2px solid #9a3412;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;color:#9a3412;font-weight:bold;box-shadow:0 2px 6px rgba(0,0,0,0.4);">★</div>`,
   iconSize: [24, 24],
   iconAnchor: [12, 12],
   popupAnchor: [0, -14],
@@ -157,6 +166,7 @@ export function LightMapPage() {
   const [statusMsg, setStatusMsg] = useState<string | null>(null)
   const [flyTo, setFlyTo] = useState<{ center: [number, number]; zoom: number }>({ center: [30, -98], zoom: 4 })
   const [showRefLocations, setShowRefLocations] = useState(true)
+  const [showIntlLocations, setShowIntlLocations] = useState(true)
 
   // Light pollution data for saved locations
   const [savedLightData, setSavedLightData] = useState<Record<string, LightPollutionResult>>({})
@@ -270,6 +280,16 @@ export function LightMapPage() {
               className="w-3 h-3 rounded"
             />
             <span className="text-[10px] text-text-muted">Best Spots</span>
+          </label>
+
+          <label className="flex items-center gap-1.5 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={showIntlLocations}
+              onChange={(e) => setShowIntlLocations(e.target.checked)}
+              className="w-3 h-3 rounded"
+            />
+            <span className="text-[10px] text-text-muted">Intl Spots</span>
           </label>
 
           <div className="flex items-center gap-2">
@@ -442,6 +462,51 @@ export function LightMapPage() {
                 </Popup>
               </Marker>
             ))}
+            {/* International astro locations from blog */}
+            {showIntlLocations && astroLocationsInternational.map((loc) => (
+              <Marker key={loc.id} position={[loc.lat, loc.lng]} icon={intlRefIcon}>
+                <Popup minWidth={280} maxWidth={320}>
+                  <div style={{ color: '#0a0a1a' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '6px' }}>
+                      <div style={{
+                        width: '24px', height: '24px', borderRadius: '50%', background: '#f97316',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        fontSize: '11px', fontWeight: 700, color: '#9a3412', border: '2px solid #9a3412',
+                      }}>★</div>
+                      <div>
+                        <p style={{ fontWeight: 600, fontSize: '14px', margin: 0 }}>{loc.name}</p>
+                        <p style={{ fontSize: '11px', color: '#666', margin: 0 }}>{loc.country} — {loc.region}</p>
+                      </div>
+                    </div>
+                    <div style={{ background: '#fff7ed', borderRadius: '6px', padding: '8px', marginBottom: '8px', border: '1px solid #fed7aa' }}>
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '4px', fontSize: '11px' }}>
+                        <div>
+                          <span style={{ color: '#888' }}>Bortle: </span>
+                          <strong>{loc.bortle}</strong>
+                        </div>
+                        <div>
+                          <span style={{ color: '#888' }}>Budget: </span>
+                          <strong>{loc.budget}</strong>
+                        </div>
+                      </div>
+                      <div style={{ fontSize: '11px', marginTop: '4px' }}>
+                        <span style={{ color: '#888' }}>Best: </span>
+                        <span>{loc.bestMonths}</span>
+                      </div>
+                      <p style={{ fontSize: '11px', marginTop: '4px', marginBottom: '2px' }}>
+                        <span style={{ color: '#888' }}>Shoot: </span>{loc.bestFor}
+                      </p>
+                      <p style={{ fontSize: '10px', color: '#c04020', marginTop: '4px', marginBottom: 0 }}>
+                        ⚠ {loc.safety}
+                      </p>
+                    </div>
+                    <a href="#/learn/best-international-astro-locations" style={{ fontSize: '11px', color: '#4a6fa5', textDecoration: 'none' }}>
+                      Read full guide →
+                    </a>
+                  </div>
+                </Popup>
+              </Marker>
+            ))}
 
           </MapContainer>
 
@@ -459,7 +524,11 @@ export function LightMapPage() {
             <div className="mt-2 pt-1 border-t border-border space-y-1">
               <div className="flex items-center gap-2">
                 <div className="w-3 h-3 rounded-full bg-astro-green border border-astro-green/50 flex items-center justify-center text-[6px] text-green-900 font-bold">★</div>
-                <span className="text-[9px] text-text-muted">Best astro spots (from guide)</span>
+                <span className="text-[9px] text-text-muted">Best US spots (from guide)</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-3 h-3 rounded-full border flex items-center justify-center text-[6px] font-bold" style={{ background: '#f97316', borderColor: '#9a3412', color: '#9a3412' }}>★</div>
+                <span className="text-[9px] text-text-muted">International spots (25 countries)</span>
               </div>
               <p className="text-[8px] text-text-muted">Click anywhere for light data</p>
             </div>

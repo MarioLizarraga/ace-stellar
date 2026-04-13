@@ -9,6 +9,7 @@ import planning from './planning-astro-shoot.json'
 import editing from './editing-stacking-basics.json'
 import lightPollution from './light-pollution-dark-skies.json'
 import bestUsLocations from './best-us-astro-locations.json'
+import bestIntlLocations from './best-international-astro-locations.json'
 
 export interface Article {
   id: string
@@ -36,4 +37,5 @@ export const articles: Article[] = [
   editing,
   lightPollution,
   bestUsLocations,
+  bestIntlLocations,
 ] as Article[]

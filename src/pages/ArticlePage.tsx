@@ -250,6 +250,14 @@ export function ArticlePage() {
               <span>★</span> View all locations on the Light Map
             </Link>
           )}
+          {article.slug === 'best-international-astro-locations' && (
+            <Link
+              to="/light-map"
+              className="mt-4 inline-flex items-center gap-2 bg-orange-500/10 border border-orange-500/30 text-orange-400 rounded-lg px-4 py-2 text-sm hover:bg-orange-500/20 transition-colors"
+            >
+              <span>★</span> View all 25 countries on the Light Map
+            </Link>
+          )}
         </motion.div>
 
         {/* Body */}
