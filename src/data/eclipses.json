@@ -1,0 +1,122 @@
+[
+  {
+    "date": "2026-02-17",
+    "type": "Annular Solar",
+    "visibility": "Antarctica, parts of Africa, southern Atlantic",
+    "notes": "Ring of fire annular eclipse. Path of annularity crosses Antarctica."
+  },
+  {
+    "date": "2026-03-03",
+    "type": "Total Lunar",
+    "visibility": "Asia, Australia, Pacific, western Americas",
+    "notes": "Total lunar eclipse with blood moon. Duration of totality ~58 min."
+  },
+  {
+    "date": "2026-08-12",
+    "type": "Total Solar",
+    "visibility": "Greenland, Iceland, Spain, parts of Portugal",
+    "notes": "Major total solar eclipse. Totality up to 2m 18s. First total solar eclipse visible from Spain since 1905."
+  },
+  {
+    "date": "2026-08-27",
+    "type": "Partial Lunar",
+    "visibility": "Americas, Europe, Africa",
+    "notes": "Small partial lunar eclipse (~1%)."
+  },
+  {
+    "date": "2027-02-06",
+    "type": "Annular Solar",
+    "visibility": "South America, Atlantic, Africa",
+    "notes": "Ring of fire crosses Chile, Argentina, Atlantic."
+  },
+  {
+    "date": "2027-02-20",
+    "type": "Partial Lunar",
+    "visibility": "Americas, Europe, Africa",
+    "notes": "Very minor partial (~3%)."
+  },
+  {
+    "date": "2027-08-02",
+    "type": "Total Solar",
+    "visibility": "North Africa, Middle East, Saudi Arabia",
+    "notes": "The 'Great North African Eclipse' — longest total solar eclipse until 2114, up to 6m 23s of totality. Major astronomical event."
+  },
+  {
+    "date": "2027-08-17",
+    "type": "Partial Lunar",
+    "visibility": "Pacific, Americas, Europe, Africa",
+    "notes": "Small partial lunar eclipse (~4%)."
+  },
+  {
+    "date": "2028-01-26",
+    "type": "Annular Solar",
+    "visibility": "South America, Atlantic, Europe, West Africa",
+    "notes": "Annular path through South America and Spain/Portugal."
+  },
+  {
+    "date": "2028-07-22",
+    "type": "Total Solar",
+    "visibility": "Australia, New Zealand",
+    "notes": "Totality crosses Sydney, Australia. Up to 5m 10s of totality."
+  },
+  {
+    "date": "2028-12-31",
+    "type": "Total Lunar",
+    "visibility": "Europe, Africa, Asia, Australia",
+    "notes": "New Year's Eve blood moon. ~1h 11min of totality."
+  },
+  {
+    "date": "2029-01-14",
+    "type": "Partial Solar",
+    "visibility": "North America, Europe, Greenland",
+    "notes": "Partial solar eclipse up to 87% obscuration."
+  },
+  {
+    "date": "2029-06-12",
+    "type": "Partial Solar",
+    "visibility": "Arctic, Scandinavia",
+    "notes": "Partial solar eclipse up to 46%."
+  },
+  {
+    "date": "2029-06-26",
+    "type": "Total Lunar",
+    "visibility": "Americas, Europe, Africa, Asia",
+    "notes": "Dramatic total lunar eclipse, ~1h 42min totality."
+  },
+  {
+    "date": "2029-07-11",
+    "type": "Partial Solar",
+    "visibility": "South America, South Atlantic",
+    "notes": "Partial solar eclipse."
+  },
+  {
+    "date": "2029-11-14",
+    "type": "Partial Solar",
+    "visibility": "Antarctica, South Africa, Southern Ocean",
+    "notes": "Partial solar eclipse."
+  },
+  {
+    "date": "2029-12-20",
+    "type": "Total Lunar",
+    "visibility": "Americas, Europe, Africa, Asia",
+    "notes": "Total lunar eclipse ~54min totality."
+  },
+  {
+    "date": "2030-06-01",
+    "type": "Annular Solar",
+    "visibility": "North Africa, Europe, Russia, North Pacific",
+    "notes": "Annular path through Algeria, Greece, Turkey, Russia."
+  },
+  {
+    "date": "2030-06-15",
+    "type": "Partial Lunar",
+    "visibility": "Americas, Europe, Africa",
+    "notes": "Partial lunar eclipse (~50%)."
+  },
+  {
+    "date": "2030-11-25",
+    "type": "Total Solar",
+    "visibility": "Botswana, South Africa, Indian Ocean, Australia",
+    "notes": "Total solar eclipse. Totality up to 3m 44s across southern Africa and Australia."
+  }
+]

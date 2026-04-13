@@ -10,6 +10,8 @@ import { LearnPage } from './pages/LearnPage'
 import { ArticlePage } from './pages/ArticlePage'
 import { LightMapPage } from './pages/LightMapPage'
 import { ToolsPage } from './pages/ToolsPage'
+import { EventsPage } from './pages/EventsPage'
+import { CatalogPage } from './pages/CatalogPage'
 
 function AnimatedRoutes() {
   const location = useLocation()
@@ -24,6 +26,8 @@ function AnimatedRoutes() {
         <Route path="/explore" element={<ExplorePage />} />
         <Route path="/light-map" element={<LightMapPage />} />
         <Route path="/tools" element={<ToolsPage />} />
+        <Route path="/events" element={<EventsPage />} />
+        <Route path="/catalog" element={<CatalogPage />} />
       </Routes>
     </AnimatePresence>
   )
