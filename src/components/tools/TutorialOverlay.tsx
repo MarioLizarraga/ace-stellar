@@ -115,35 +115,58 @@ export function TutorialOverlay({ steps, isActive, onClose, onStepChange }: Tuto
   } else if (rect) {
     const padding = 16
     const tooltipWidth = 380
-    const centerX = rect.left + rect.width / 2 - tooltipWidth / 2
-    const clampX = Math.max(16, Math.min(window.innerWidth - tooltipWidth - 16, centerX))
+    const tooltipHeightEstimate = 280 // approximate height of the tooltip
+    const viewportH = window.innerHeight
+    const viewportW = window.innerWidth
 
-    if (placement === 'bottom') {
+    const centerX = rect.left + rect.width / 2 - tooltipWidth / 2
+    const clampX = Math.max(16, Math.min(viewportW - tooltipWidth - 16, centerX))
+
+    // Determine final placement — auto-flip if there isn't enough room
+    let finalPlacement = placement
+    if (placement === 'top' && rect.top < tooltipHeightEstimate + padding) {
+      finalPlacement = 'bottom' // not enough space above → flip to bottom
+    } else if (placement === 'bottom' && rect.bottom + tooltipHeightEstimate + padding > viewportH) {
+      finalPlacement = 'top' // not enough space below → flip to top
+    } else if (placement === 'right' && rect.right + tooltipWidth + padding > viewportW) {
+      finalPlacement = 'left'
+    } else if (placement === 'left' && rect.left - tooltipWidth - padding < 0) {
+      finalPlacement = 'right'
+    }
+
+    // As a last resort, if the element is huge or tooltip still won't fit,
+    // position at the bottom of the viewport
+    if (finalPlacement === 'bottom') {
+      const top = Math.min(rect.bottom + padding, viewportH - tooltipHeightEstimate - 16)
       tooltipStyle = {
         position: 'fixed',
-        top: rect.bottom + padding,
+        top: Math.max(16, top),
         left: clampX,
         width: tooltipWidth,
       }
-    } else if (placement === 'top') {
+    } else if (finalPlacement === 'top') {
+      // Use top-based positioning (not bottom) so we can clamp it
+      const top = Math.max(16, rect.top - tooltipHeightEstimate - padding)
       tooltipStyle = {
         position: 'fixed',
-        bottom: window.innerHeight - rect.top + padding,
+        top,
         left: clampX,
         width: tooltipWidth,
       }
-    } else if (placement === 'right') {
+    } else if (finalPlacement === 'right') {
+      const top = Math.max(16, Math.min(viewportH - tooltipHeightEstimate - 16, rect.top))
       tooltipStyle = {
         position: 'fixed',
-        top: Math.max(16, rect.top),
-        left: rect.right + padding,
+        top,
+        left: Math.min(viewportW - tooltipWidth - 16, rect.right + padding),
         width: tooltipWidth,
       }
-    } else if (placement === 'left') {
+    } else if (finalPlacement === 'left') {
+      const top = Math.max(16, Math.min(viewportH - tooltipHeightEstimate - 16, rect.top))
       tooltipStyle = {
         position: 'fixed',
-        top: Math.max(16, rect.top),
-        right: window.innerWidth - rect.left + padding,
+        top,
+        left: Math.max(16, rect.left - tooltipWidth - padding),
         width: tooltipWidth,
       }
     }
