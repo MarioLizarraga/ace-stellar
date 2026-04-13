@@ -15,7 +15,7 @@ export function StarTrailsPreview() {
         </p>
       </div>
 
-      <div>
+      <div data-tour="trails-slider">
         <label className="text-[10px] uppercase tracking-widest text-text-muted mb-1 block">Total Shooting Duration (minutes)</label>
         <input
           type="number"

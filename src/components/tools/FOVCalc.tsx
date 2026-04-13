@@ -59,7 +59,7 @@ export function FOVCalc() {
         </div>
       </div>
 
-      <div className="bg-bg-primary/30 border border-border rounded-lg p-4">
+      <div data-tour="fov-result" className="bg-bg-primary/30 border border-border rounded-lg p-4">
         <p className="text-[10px] uppercase tracking-widest text-text-muted mb-3">What Fits in Your Frame</p>
         <div className="space-y-1.5">
           {dsoComparison.map((d) => (

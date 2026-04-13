@@ -51,7 +51,7 @@ export function TimeLapseCalc() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+      <div data-tour="timelapse-result" className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         <div className="bg-bg-primary/50 border border-border rounded-lg p-4 text-center">
           <p className="text-[10px] uppercase tracking-widest text-text-muted mb-1">Total Frames</p>
           <p className="text-3xl font-bold text-text-primary tabular-nums">{result.totalFrames.toLocaleString()}</p>

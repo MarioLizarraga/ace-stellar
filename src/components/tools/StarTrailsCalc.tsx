@@ -69,7 +69,7 @@ export function StarTrailsCalc() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
+      <div data-tour="npf-result" className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
         <div className="bg-bg-primary/50 border border-border rounded-lg p-4">
           <p className="text-[10px] uppercase tracking-widest text-text-muted mb-1">500 Rule</p>
           <p className="text-3xl font-bold text-text-primary tabular-nums">{result.fiveHundredRule}<span className="text-lg text-text-muted ml-1">s</span></p>

@@ -39,7 +39,7 @@ export function ExposureCalc() {
         <p className="text-xs text-[#a8b2c1]">Convert between ISO / aperture / shutter while keeping the same total exposure.</p>
       </div>
 
-      <div className="bg-bg-primary/30 border border-border rounded-lg p-4">
+      <div data-tour="exposure-ref" className="bg-bg-primary/30 border border-border rounded-lg p-4">
         <p className="text-[10px] uppercase tracking-widest text-text-muted mb-3">Reference Exposure</p>
         <div className="grid grid-cols-3 gap-3">
           <div>
@@ -61,7 +61,7 @@ export function ExposureCalc() {
         <p className="text-[10px] text-text-muted mt-2">EV: <span className="tabular-nums text-text-primary">{targetEV.toFixed(2)}</span></p>
       </div>
 
-      <div className="bg-bg-primary/30 border border-border rounded-lg p-4">
+      <div data-tour="exposure-solve" className="bg-bg-primary/30 border border-border rounded-lg p-4">
         <p className="text-[10px] uppercase tracking-widest text-text-muted mb-3">Solve For</p>
         <div className="flex gap-2 mb-3">
           {(['iso', 'aperture', 'shutter'] as Unknown[]).map((k) => (

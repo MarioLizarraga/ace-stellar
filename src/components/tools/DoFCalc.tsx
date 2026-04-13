@@ -51,7 +51,7 @@ export function DoFCalc() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+      <div data-tour="dof-result" className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         <div className="bg-astro-green/10 border border-astro-green/30 rounded-lg p-4">
           <p className="text-[10px] uppercase tracking-widest text-astro-green mb-1">Hyperfocal Distance ★</p>
           <p className="text-3xl font-bold text-astro-green tabular-nums">{dof.hyperfocalM}<span className="text-lg text-astro-green/60 ml-1">m</span></p>
