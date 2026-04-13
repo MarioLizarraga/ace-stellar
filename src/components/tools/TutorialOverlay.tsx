@@ -1,4 +1,4 @@
-import { useState, useEffect, useLayoutEffect } from 'react'
+import { useState, useEffect } from 'react'
 import { createPortal } from 'react-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 
@@ -20,7 +20,7 @@ interface TutorialOverlayProps {
 export function TutorialOverlay({ steps, isActive, onClose, onStepChange }: TutorialOverlayProps) {
   const [stepIndex, setStepIndex] = useState(0)
   const [rect, setRect] = useState<DOMRect | null>(null)
-  const [scrollTick, setScrollTick] = useState(0)
+  const [ready, setReady] = useState(false) // controls visibility during transition
 
   const step = steps[stepIndex]
 
@@ -31,52 +31,64 @@ export function TutorialOverlay({ steps, isActive, onClose, onStepChange }: Tuto
     }
   }, [isActive, stepIndex])
 
-  // Reset when tutorial opens/closes
+  // Reset when tutorial opens
   useEffect(() => {
-    if (isActive) {
-      setStepIndex(0)
-    }
+    if (isActive) setStepIndex(0)
+    else setReady(false)
   }, [isActive])
 
-  // Find target element and track its position (including after scroll/resize)
-  useLayoutEffect(() => {
+  // Handle step transition: hide → wait → scroll → wait → show
+  useEffect(() => {
     if (!isActive || !step) return
 
-    function updateRect() {
+    setReady(false) // hide tooltip while transitioning
+    setRect(null)
+
+    // Wait for tool switch render (React commit + DOM paint)
+    const setupTimer = setTimeout(() => {
       if (step.placement === 'center' || !step.target) {
         setRect(null)
+        setReady(true)
         return
       }
+
       const el = document.querySelector(step.target)
-      if (el) {
+      if (!el) {
+        setRect(null)
+        setReady(true)
+        return
+      }
+
+      // Scroll element into view smoothly
+      el.scrollIntoView({ behavior: 'smooth', block: 'center' })
+
+      // Wait for scroll to finish, then measure
+      const scrollTimer = setTimeout(() => {
         const r = el.getBoundingClientRect()
         setRect(r)
-        // Scroll element into view
-        el.scrollIntoView({ behavior: 'smooth', block: 'center' })
-      } else {
-        setRect(null)
-      }
-    }
+        setReady(true)
+      }, 500) // enough time for smooth scroll to complete
 
-    // Delay slightly for the tool switch render
-    const timer = setTimeout(updateRect, 200)
-
-    window.addEventListener('resize', updateRect)
-    window.addEventListener('scroll', updateRect, true)
+      return () => clearTimeout(scrollTimer)
+    }, 250) // time for tool switch to render
 
     return () => {
-      clearTimeout(timer)
-      window.removeEventListener('resize', updateRect)
-      window.removeEventListener('scroll', updateRect, true)
+      clearTimeout(setupTimer)
     }
-  }, [isActive, step, scrollTick])
+  }, [isActive, stepIndex, step?.target, step?.placement])
 
-  // Periodic re-measure to catch layout shifts
+  // Keep rect up-to-date if window resizes (but not during transitions)
   useEffect(() => {
-    if (!isActive) return
-    const interval = setInterval(() => setScrollTick((t) => t + 1), 500)
-    return () => clearInterval(interval)
-  }, [isActive])
+    if (!isActive || !ready || !step || step.placement === 'center' || !step.target) return
+
+    function update() {
+      const el = document.querySelector(step.target)
+      if (el) setRect(el.getBoundingClientRect())
+    }
+
+    window.addEventListener('resize', update)
+    return () => window.removeEventListener('resize', update)
+  }, [isActive, ready, step])
 
   if (!isActive || !step) return null
 
@@ -103,18 +115,21 @@ export function TutorialOverlay({ steps, isActive, onClose, onStepChange }: Tuto
   } else if (rect) {
     const padding = 16
     const tooltipWidth = 380
+    const centerX = rect.left + rect.width / 2 - tooltipWidth / 2
+    const clampX = Math.max(16, Math.min(window.innerWidth - tooltipWidth - 16, centerX))
+
     if (placement === 'bottom') {
       tooltipStyle = {
         position: 'fixed',
         top: rect.bottom + padding,
-        left: Math.max(16, Math.min(window.innerWidth - tooltipWidth - 16, rect.left + rect.width / 2 - tooltipWidth / 2)),
+        left: clampX,
         width: tooltipWidth,
       }
     } else if (placement === 'top') {
       tooltipStyle = {
         position: 'fixed',
         bottom: window.innerHeight - rect.top + padding,
-        left: Math.max(16, Math.min(window.innerWidth - tooltipWidth - 16, rect.left + rect.width / 2 - tooltipWidth / 2)),
+        left: clampX,
         width: tooltipWidth,
       }
     } else if (placement === 'right') {
@@ -135,24 +150,43 @@ export function TutorialOverlay({ steps, isActive, onClose, onStepChange }: Tuto
   }
 
   const content = (
-    <AnimatePresence>
+    <div style={{ position: 'fixed', inset: 0, zIndex: 99998, pointerEvents: 'none' }}>
+      {/* Dim overlay — always visible so the page doesn't flash */}
       <motion.div
-        initial={{ opacity: 0 }}
+        initial={false}
         animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
-        style={{ position: 'fixed', inset: 0, zIndex: 99998, pointerEvents: 'none' }}
-      >
-        {/* Dim overlay with cutout for target */}
-        {rect && !isCentered ? (
-          <svg style={{ position: 'fixed', inset: 0, width: '100%', height: '100%', pointerEvents: 'auto' }}>
+        onClick={onClose}
+        style={{
+          position: 'fixed',
+          inset: 0,
+          background: 'rgba(10, 10, 26, 0.82)',
+          pointerEvents: 'auto',
+        }}
+      />
+
+      {/* Spotlight — animates to new position smoothly */}
+      <AnimatePresence>
+        {ready && rect && !isCentered && (
+          <motion.svg
+            key="spotlight"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.25 }}
+            style={{ position: 'fixed', inset: 0, width: '100%', height: '100%', pointerEvents: 'none' }}
+          >
             <defs>
               <mask id="tutorial-mask">
                 <rect width="100%" height="100%" fill="white" />
-                <rect
-                  x={rect.left - 8}
-                  y={rect.top - 8}
-                  width={rect.width + 16}
-                  height={rect.height + 16}
+                <motion.rect
+                  initial={false}
+                  animate={{
+                    x: rect.left - 8,
+                    y: rect.top - 8,
+                    width: rect.width + 16,
+                    height: rect.height + 16,
+                  }}
+                  transition={{ duration: 0.35, ease: 'easeInOut' }}
                   rx="12"
                   fill="black"
                 />
@@ -163,85 +197,83 @@ export function TutorialOverlay({ steps, isActive, onClose, onStepChange }: Tuto
               height="100%"
               fill="rgba(10, 10, 26, 0.82)"
               mask="url(#tutorial-mask)"
+              pointerEvents="auto"
               onClick={onClose}
             />
-            {/* Highlight ring */}
-            <rect
-              x={rect.left - 8}
-              y={rect.top - 8}
-              width={rect.width + 16}
-              height={rect.height + 16}
+            <motion.rect
+              initial={false}
+              animate={{
+                x: rect.left - 8,
+                y: rect.top - 8,
+                width: rect.width + 16,
+                height: rect.height + 16,
+              }}
+              transition={{ duration: 0.35, ease: 'easeInOut' }}
               rx="12"
               fill="none"
               stroke="#4a6fa5"
               strokeWidth="2"
-              style={{ pointerEvents: 'none' }}
             >
               <animate attributeName="stroke-opacity" values="0.6;1;0.6" dur="2s" repeatCount="indefinite" />
-            </rect>
-          </svg>
-        ) : (
-          <div
-            onClick={onClose}
-            style={{
-              position: 'fixed',
-              inset: 0,
-              background: 'rgba(10, 10, 26, 0.85)',
-              pointerEvents: 'auto',
-            }}
-          />
+            </motion.rect>
+          </motion.svg>
         )}
+      </AnimatePresence>
 
-        {/* Tooltip */}
-        <motion.div
-          key={stepIndex}
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-          exit={{ opacity: 0, scale: 0.95 }}
-          style={{ ...tooltipStyle, zIndex: 99999, pointerEvents: 'auto' }}
-          className="bg-bg-surface border border-accent/40 rounded-xl p-5 shadow-2xl"
-        >
-          <div className="flex items-center justify-between mb-3">
-            <span className="text-[10px] uppercase tracking-widest text-accent">
-              Step {stepIndex + 1} of {steps.length}
-            </span>
-            <button
-              onClick={onClose}
-              className="text-text-muted hover:text-text-primary text-sm"
-            >
-              Skip tutorial ✕
-            </button>
-          </div>
+      {/* Tooltip — only render when ready */}
+      <AnimatePresence mode="wait">
+        {ready && (
+          <motion.div
+            key={stepIndex}
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.95 }}
+            transition={{ duration: 0.25 }}
+            style={{ ...tooltipStyle, zIndex: 99999, pointerEvents: 'auto' }}
+            className="bg-bg-surface border border-accent/40 rounded-xl p-5 shadow-2xl"
+          >
+            <div className="flex items-center justify-between mb-3">
+              <span className="text-[10px] uppercase tracking-widest text-accent">
+                Step {stepIndex + 1} of {steps.length}
+              </span>
+              <button
+                onClick={onClose}
+                className="text-text-muted hover:text-text-primary text-sm"
+              >
+                Skip tutorial ✕
+              </button>
+            </div>
 
-          <h3 className="text-lg font-semibold text-text-primary mb-2">{step.title}</h3>
-          <p className="text-sm text-[#a8b2c1] leading-relaxed whitespace-pre-line mb-4">{step.body}</p>
+            <h3 className="text-lg font-semibold text-text-primary mb-2">{step.title}</h3>
+            <p className="text-sm text-[#a8b2c1] leading-relaxed whitespace-pre-line mb-4">{step.body}</p>
 
-          {/* Progress bar */}
-          <div className="w-full h-1 bg-bg-primary rounded-full mb-4">
-            <div
-              className="h-full bg-accent rounded-full transition-all duration-300"
-              style={{ width: `${((stepIndex + 1) / steps.length) * 100}%` }}
-            />
-          </div>
+            {/* Progress bar */}
+            <div className="w-full h-1 bg-bg-primary rounded-full mb-4">
+              <div
+                className="h-full bg-accent rounded-full transition-all duration-300"
+                style={{ width: `${((stepIndex + 1) / steps.length) * 100}%` }}
+              />
+            </div>
 
-          <div className="flex items-center justify-between">
-            <button
-              onClick={prev}
-              disabled={stepIndex === 0}
-              className="text-xs text-text-muted hover:text-text-primary disabled:opacity-30 disabled:cursor-not-allowed"
-            >
-              ← Previous
-            </button>
-            <button
-              onClick={next}
-              className="bg-accent text-white rounded-lg px-4 py-2 text-sm font-medium hover:bg-accent/80 transition-colors"
-            >
-              {stepIndex === steps.length - 1 ? 'Finish 🎉' : 'Next →'}
-            </button>
-          </div>
-        </motion.div>
-      </motion.div>
-    </AnimatePresence>
+            <div className="flex items-center justify-between">
+              <button
+                onClick={prev}
+                disabled={stepIndex === 0}
+                className="text-xs text-text-muted hover:text-text-primary disabled:opacity-30 disabled:cursor-not-allowed"
+              >
+                ← Previous
+              </button>
+              <button
+                onClick={next}
+                className="bg-accent text-white rounded-lg px-4 py-2 text-sm font-medium hover:bg-accent/80 transition-colors"
+              >
+                {stepIndex === steps.length - 1 ? 'Finish 🎉' : 'Next →'}
+              </button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
   )
 
   return createPortal(content, document.body)
